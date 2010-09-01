@@ -69,7 +69,8 @@ div.mainContainer div.bar {
 	color:sienna;
 }
 .font_small {
-	font-size: 8pt;
+	/*font-size: 8pt;*/
+	font-size: smaller;
 }
 
       /*
