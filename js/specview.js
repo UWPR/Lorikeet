@@ -388,10 +388,6 @@
 				options.height = height
 				container.find("#msmsplot").css({height: height});
 				plotAccordingToChoices();
-				if(options.ms1peaks && options.ms1peaks.length > 0) {
-					container.find("#msplot").css({height: height});
-					createMs1Plot();
-				}
 				container.find("#slider_height_val").text(height);
 			}
 		});
@@ -823,18 +819,18 @@
 		parentTable += '<tr> ';
 		
 		// Header
-		parentTable += '<td colspan="4" class="bar"> ';
+		parentTable += '<td colspan="4" class="bar noprint"> ';
 		parentTable += '</div> ';
 		parentTable += '</td> ';
 		parentTable += '</tr> ';
 	
 		// options table
 		parentTable += '<tr> ';
-		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="optionsTable" > ';
+		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="optionsTable" class="noprint"> ';
 		parentTable += '</td> ';
 		
 		// placeholder for sequence, m/z, scan number etc
-		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="bottom" align="center"> '; 
+		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="bottom" align="center" class="printable"> '; 
 		parentTable += '<div id="seqinfo" style="width:100%;"></div> ';
 		// placeholder for file name, scan number and charge
 		parentTable += '<div id="fileinfo" style="width:100%;"></div> ';
@@ -842,7 +838,7 @@
 		
 		
 		// placeholder for the ion table
-		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="ionTableLoc1"> ';
+		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="ionTableLoc1" class="noprint"> ';
 		parentTable += '<div id="ionTableDiv">';
 		parentTable += '<span id="moveIonTable" class="font_small link">[Click]</span> <span class="font_small">to move table</span>';
 		// placeholder for file name, scan number, modifications etc.
@@ -861,7 +857,7 @@
 		
 		// placeholder for viewing options (zoom, plot size etc.)
 		parentTable += '<tr> ';
-		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> '; 
+		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center" class="noprint"> '; 
 		parentTable += '<div id="viewOptionsDiv"></div> ';
 		parentTable += '</td> ';
 		parentTable += '</tr> ';
@@ -878,7 +874,7 @@
 		
 		// Footer & placeholder for moving ion table
 		parentTable += '<tr> ';
-		parentTable += '<td colspan="5" class="bar" valign="top" align="center" id="ionTableLoc2" > ';
+		parentTable += '<td colspan="5" class="bar noprint" valign="top" align="center" id="ionTableLoc2" > ';
 		parentTable += '<div align="center" style="width:100%;font-size:10pt;"> ';
 		parentTable += '</div> ';
 		parentTable += '</td> ';
