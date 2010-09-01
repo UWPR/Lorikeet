@@ -1,3 +1,11 @@
+@media print {
+	.noprint {
+         display:none;
+    }
+    
+}
+
+
 BODY    {
    background-color: #FFFFFF;
    color: #000000;
