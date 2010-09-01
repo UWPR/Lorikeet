@@ -10,11 +10,16 @@
 					scanNum: null,
 					fileName: null,
 					charge: null,
+					precursorMz: null,
 					staticMods: [],
 					variableMods: [],
 					ntermMod: 0,
 					ctermMod: 0,
 					peaks: [],
+					ms1peaks: null,
+					ms1scan: null,
+					precursorPeaks: null,
+					precursorPeakClickFn: null,
 					width: 750, 	// width of the ms/ms plot
 					height: 450, 	// height of the ms/ms plot
 					massError: 0.5, // mass tolerance for labeling peaks
@@ -34,11 +39,14 @@
 				makeOptionsTable();
 				makeViewingOptions();
 				showSequenceInfo();
-				showSpecModInfo();
+				showFileInfo();
+				showModInfo();
 				
 				massError = options.massError;
 				
-				createPlot(getDatasets()); // Initial Plot
+				createPlot(getDatasets()); // Initial MS/MS Plot
+				if(options.ms1peaks && options.ms1peaks.length > 0) 
+					createMs1Plot();
 				setupInteractions();
 				
 				makeIonTable();
@@ -62,12 +70,18 @@
             shadowSize: 0
         },
         selection: { mode: "x", color: "#F0E68C" },
-        grid: { show: true, hoverable: true, clickable: false, autoHighlight: false },
-        xaxis: { tickLength: 5, tickColor: "#000" },
-    	yaxis: { tickLength: 5, tickColor: "#000" }
+        grid: { show: true, 
+        		hoverable: true, 
+        		clickable: false, 
+        		autoHighlight: false, 
+        		borderWidth: 1,
+        		labelMargin: 1},
+        xaxis: { tickLength: 3, tickColor: "#000" },
+    	yaxis: { tickLength: 3, tickColor: "#000" }
 	};
 	
-	var plot;
+	var plot;					// MS/MS plot
+	var ms1plot;				// MS1 plot (only created when data is available)
 	var zoomRange; 				// for zooming
 	var previousPoint = null; 	// for tooltips
 	
@@ -91,11 +105,88 @@
 		}
    	}
 	
-	function createPlot(datasets) {
+	function createMs1Plot() {
 		
-		// If we have already created a plot, use the options for the existing plot.
-		//if(plot)
-		//	plotOptions = plot.getOptions();
+		var data = [{data: options.ms1peaks, color: "#bbbbbb", hoverable: false, clickable: false}];
+		if(options.precursorPeaks) {
+			data.push({data: options.precursorPeaks, color: "#ff0000", hoverable: true, clickable: true});
+		}
+		
+		// the MS/MS plot should have been created by now.  This is a hack to get the plots aligned.
+		// We will set the y-axis labelWidth to this value.
+		var labelWidth = plot.getAxes().yaxis.labelWidth;
+		
+		var ms1plotOptions = {
+				series: { peaks: {show: true, shadowSize: 0}, shadowSize: 0},
+				grid: { show: true, 
+						hoverable: true, 
+						autoHighlight: true,
+						clickable: true,
+						borderWidth: 1,
+						labelMargin: 1},
+		        xaxis: { tickLength: 2, tickColor: "#000" },
+		    	yaxis: { tickLength: 0, tickColor: "#fff", ticks: [], labelWidth: labelWidth }
+		};
+		
+		var placeholder = container.find("#msplot");
+		ms1plot = $.plot(placeholder, data, ms1plotOptions);
+		
+		// mark the current precursor peak
+		if(options.precursorPeaks) {
+			var x,y, diff, theoricalMz;
+			
+			if(options.sequence && options.charge) {
+				var mass = Peptide.getSeqMassMono(options.sequence, options.sequence.length, "n") + Ion.MASS_O + Ion.MASS_H;
+				theoricalMz = Ion.getMz(mass, options.charge);
+			}
+			
+			if(theoricalMz) {
+				// find the closest actual peak
+				for(var i = 0; i < precursorPeaks.length; i += 1) {
+					var d = Math.abs(x,theoricalMz);
+					if(!diff || d < diff) {
+						x = precursorPeaks[i][0];
+						y = precursorPeaks[i][1];
+						diff = d;
+					}
+				}
+				var o = ms1plot.pointOffset({ x: x, y: y});
+			    var ctx = ms1plot.getCanvas().getContext("2d");
+			    ctx.beginPath();
+			    ctx.moveTo(o.left-10, o.top-5);
+			    ctx.lineTo(o.left-10, o.top + 5);
+			    ctx.lineTo(o.left-10 + 10, o.top);
+			    ctx.lineTo(o.left-10, o.top-5);
+			    ctx.fillStyle = "#008800";
+			    ctx.fill();
+			    console.log(o);
+			    placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top-4) + 'px;color:#666;font-size:smaller">'+x.toFixed(2)+'</div>');
+			}
+		}
+		
+		// mark the scan number if we have it
+		if(options.ms1scan) {
+			o = ms1plot.getPlotOffset();
+			console.log(o);
+			placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top+4) + 'px;color:#666;font-size:smaller">MS1 scan: '+options.ms1scan+'</div>');
+		}
+
+	    
+		// allow clicking on plot if we have a function to handle the click
+		if(options.precursorPeakClickFn != null) {
+			placeholder.bind("plotclick", function (event, pos, item) {
+				
+		        if (item) {
+		          //highlight(item.series, item.datapoint);
+		        	options.precursorPeakClickFn(item.datapoint[0]);
+		        	console.log(item.datapoint[0]);
+		        }
+		    });
+		}
+
+	}
+	
+	function createPlot(datasets) {
 		
     	if(!zoomRange) {
     		plot = $.plot(container.find("#msmsplot"), datasets,  plotOptions);
@@ -125,24 +216,6 @@
 		
 		// ZOOMING
 	    container.find("#msmsplot").bind("plotselected", function (event, ranges) {
-	    	
-	    	/*mz_min = ranges.xaxis.from.toFixed(1);
-	    	mz_max = ranges.xaxis.to.toFixed(1);
-	    	
-	    	max_int = 0;
-	    	for(var i = 0; i < peaks.length; i += 1) {
-	    		if(peaks[i][0] < mz_min)
-	    			continue;
-	    		if(peaks[i][0] > mz_max)
-	    			continue;
-	    		if(peaks[i][1] > max_int)
-	    			max_int = peaks[i][1];
-	    	}
-	    	if(max_int > 0) {
-	    		ranges.yaxis.from = 0;
-	    		ranges.yaxis.to = max_int;
-	    	}*/
-	    	
 	    	zoomRange = ranges;
 	    	createPlot(getDatasets());
 	    });
@@ -296,6 +369,10 @@
 				options.width = width;
 				container.find("#msmsplot").css({width: width});
 				plotAccordingToChoices();
+				if(options.ms1peaks && options.ms1peaks.length > 0) {
+					container.find("#msplot").css({width: width});
+					createMs1Plot();
+				}
 				container.find("#slider_width_val").text(width);
 			}
 		});
@@ -311,6 +388,10 @@
 				options.height = height
 				container.find("#msmsplot").css({height: height});
 				plotAccordingToChoices();
+				if(options.ms1peaks && options.ms1peaks.length > 0) {
+					container.find("#msplot").css({height: height});
+					createMs1Plot();
+				}
 				container.find("#slider_height_val").text(height);
 			}
 		});
@@ -734,6 +815,7 @@
 	// -----------------------------------------------
 	function initContainer(container, options) {
 		
+		var rowspan = options.ms1peaks ? 4 : 3;
 		container.addClass("mainContainer");
 		
 		var parentTable = '<table cellpadding="0" cellspacing="5"> ';
@@ -748,19 +830,27 @@
 	
 		// options table
 		parentTable += '<tr> ';
-		parentTable += '<td rowspan="4" valign="top" id="optionsTable" > ';
+		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="optionsTable" > ';
 		parentTable += '</td> ';
 		
 		// placeholder for sequence, m/z, scan number etc
 		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="bottom" align="center"> '; 
 		parentTable += '<div id="seqinfo" style="width:100%;"></div> ';
+		// placeholder for file name, scan number and charge
+		parentTable += '<div id="fileinfo" style="width:100%;"></div> ';
 		parentTable += '</td> ';
 		
+		
 		// placeholder for the ion table
-		parentTable += '<td rowspan="4" valign="top" id="ionTableLoc1"> ';
-		parentTable += '<div id="ionTableDiv" class="font_small"><span id="moveIonTable" class="link">[Click]</span> <span>to move table</span></div> ';
+		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="ionTableLoc1"> ';
+		parentTable += '<div id="ionTableDiv">';
+		parentTable += '<span id="moveIonTable" class="font_small link">[Click]</span> <span class="font_small">to move table</span>';
+		// placeholder for file name, scan number, modifications etc.
+		parentTable += '<div id="modinfo" style="margin-top:5px;"></div> ';
+		parentTable += '</div> ';
 		parentTable += '</td> ';
 		parentTable += '</tr> ';
+		
 		
 		// placeholders for the plots
 		parentTable += '<tr> ';
@@ -776,17 +866,19 @@
 		parentTable += '</td> ';
 		parentTable += '</tr> ';
 		
-		// placeholder for file name, scan number, modifications etc.
-		parentTable += '<tr> ';
-		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="bottom" align="center"> '; 
-		parentTable += '<div id="specmodinfo" style="width:100%;"></div> ';
-		parentTable += '</td> ';
-		parentTable += '</tr> ';
+		// placeholder for ms1 plot (if data is available)
+		if(options.ms1peaks && options.ms1peaks.length > 0) {
+			parentTable += '<tr> ';
+			parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> '; 
+			parentTable += '<div id="msplot" style="width:'+options.width+'px;height:100px;"></div> ';
+			parentTable += '</td> ';
+			parentTable += '</tr> ';
+		}
 		
 		
 		// Footer & placeholder for moving ion table
 		parentTable += '<tr> ';
-		parentTable += '<td colspan="4" class="bar" valign="top" align="center" id="ionTableLoc2" > ';
+		parentTable += '<td colspan="5" class="bar" valign="top" align="center" id="ionTableLoc2" > ';
 		parentTable += '<div align="center" style="width:100%;font-size:10pt;"> ';
 		parentTable += '</div> ';
 		parentTable += '</td> ';
@@ -833,7 +925,7 @@
 		var ctermIons = getSelectedCtermIons(selectedIonTypes);
 		
 		var myTable = '' ;
-		myTable += '<table id="ionTable" cellpadding="2">' ;
+		myTable += '<table id="ionTable" cellpadding="2" class="font_small">' ;
 		myTable +=  "<thead>" ;
 		myTable +=   "<tr>";
 		// nterm ions
@@ -966,71 +1058,82 @@
 	}
 	
 	//---------------------------------------------------------
-	// SPECTRUM INFO
+	// FILE INFO -- filename, scan number, precursor m/z and charge
 	//---------------------------------------------------------
-	function showSpecModInfo () {
+	function showFileInfo () {
 		
-		var specinfo = '';
-		if(options.sequence) {
+		var fileinfo = '';
 			
-			specinfo += '<div>';
-			if(options.ntermMod || options.ntermMod > 0) {
-				specinfo += 'Add to N-term: <b>'+options.ntermMod+'</b>';
+		if(options.fileName || options.scanNum) {
+			fileinfo += '<div style="margin-top:5px;" class="font_small">';
+			if(options.fileName) {
+				fileinfo += 'File: '+options.fileName;
 			}
-			if(options.ctermMod || options.ctermMod > 0) {
-				specinfo += 'Add to C-term: <b>'+options.ctermMod+'</b>';
+			if(options.scanNum) {
+				fileinfo += ', Scan: '+options.scanNum;
+			}	
+			if(options.precursorMz) {
+				fileinfo += ', Precursor m/z: '+options.precursorMz;
 			}
-			specinfo += '</div>';
-			
-			if(options.staticMods && options.staticMods.length > 0) {
-				specinfo += '<div style="margin-top:10px;>';
-				specinfo += 'Static Modifications: ';
-				for(var i = 0; i < options.staticMods.length; i += 1) {
-					var mod = options.staticMods[i];
-					if(i > 0) specinfo += ', ';
-					specinfo += mod.aa.code+": "+mod.modMass;
-				}
-				specinfo += '</div>';
+			if(options.charge) {
+				fileinfo += ', Charge: '+options.charge;
 			}
-			
-			if(options.variableMods && options.variableMods.length > 0) {
-				
-				var modChars = [];
-				var uniqvarmods = [];
-				for(var i = 0; i < options.variableMods.length; i += 1) {
-					var mod = options.variableMods[i];
-					if(modChars[mod.aa.code])
-						continue;
-					modChars[mod.aa.code] = 1;
-					uniqvarmods.push(mod);
-				}  
-				
-				specinfo += '<div style="margin-top:10px;">';
-				specinfo += 'Variable Modifications: ';
-				for(var i = 0; i < uniqvarmods.length; i += 1) {
-					var mod = uniqvarmods[i];
-					if(i > 0) specinfo += ', ';
-					specinfo += "<b>"+mod.aa.code+" ("+mod.modMass+")</b>";
-				}
-				specinfo += '</div>';
-			}
-			
-			if(options.fileName || options.scanNum) {
-				specinfo += '<div style="margin-top:10px;">';
-				if(options.fileName) {
-					specinfo += 'File: '+options.fileName;
-				}
-				if(options.scanNum) {
-					specinfo += ', Scan: '+options.scanNum;
-				}	
-				if(options.charge) {
-					specinfo += ', Charge: '+options.charge;
-				}
-				specinfo += '</div>';
-			}
+			fileinfo += '</div>';
 		}
 		
-		container.find("#specmodinfo").append(specinfo);
+		container.find("#fileinfo").append(fileinfo);
+	}
+	
+	//---------------------------------------------------------
+	// MODIFICATION INFO
+	//---------------------------------------------------------
+	function showModInfo () {
+		
+		var modInfo = '';
+			
+		modInfo += '<div>';
+		if(options.ntermMod || options.ntermMod > 0) {
+			modInfo += 'Add to N-term: <b>'+options.ntermMod+'</b>';
+		}
+		if(options.ctermMod || options.ctermMod > 0) {
+			modInfo += 'Add to C-term: <b>'+options.ctermMod+'</b>';
+		}
+		modInfo += '</div>';
+		
+		if(options.staticMods && options.staticMods.length > 0) {
+			modInfo += '<div style="margin-top:5px;">';
+			modInfo += 'Static Modifications: ';
+			for(var i = 0; i < options.staticMods.length; i += 1) {
+				var mod = options.staticMods[i];
+				if(i > 0) modInfo += ', ';
+				modInfo += "<div><b>"+mod.aa.code+": "+mod.modMass+"</b></div>";
+			}
+			modInfo += '</div>';
+		}
+		
+		if(options.variableMods && options.variableMods.length > 0) {
+			
+			var modChars = [];
+			var uniqvarmods = [];
+			for(var i = 0; i < options.variableMods.length; i += 1) {
+				var mod = options.variableMods[i];
+				if(modChars[mod.aa.code])
+					continue;
+				modChars[mod.aa.code] = 1;
+				uniqvarmods.push(mod);
+			}  
+			
+			modInfo += '<div style="margin-top:5px;">';
+			modInfo += 'Variable Modifications: ';
+			for(var i = 0; i < uniqvarmods.length; i += 1) {
+				var mod = uniqvarmods[i];
+				if(i > 0) modInfo += ', ';
+				modInfo += "<div><b>"+mod.aa.code+": "+mod.modMass+"</b></div>";
+			}
+			modInfo += '</div>';
+		}
+		
+		container.find("#modinfo").append(modInfo);
 	}
 	
 	//---------------------------------------------------------
