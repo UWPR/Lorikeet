@@ -12,7 +12,13 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
 	Peptide.sequence = seq;
 	Peptide.ntermMod = ntermModification;
 	Peptide.ctermMod = ctermModification;
-	Peptide.staticMods = staticModifications;
+	Peptide.staticMods = [];
+	if(staticModifications) {
+		for(var i = 0; i < staticModifications.length; i += 1) {
+			var mod = staticModifications[i];
+			Peptide.staticMods[mod.aa.code] = mod;
+		}
+	}
 	
 	Peptide.varMods = [];
 	if(varModifications) {

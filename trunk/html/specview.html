@@ -301,7 +301,7 @@ function createSpectrum() {
 			return false;
 		}
 		
-		staticMods.push(new Modification(validAA, mass));
+		staticMods.push({aminoAcid: validAA.code, modMass: mass});
 	});
 	
 	if(err)
@@ -365,7 +365,7 @@ function createSpectrum() {
 				err = true;
 				return false;
 			}
-			varMods.push(new VariableModification(pos, mass, AminoAcid.M));
+			varMods.push({index: pos, modMass: mass, aminoAcid: validAA.code});
 		}
 	});
 	if(err)
@@ -421,26 +421,26 @@ function setExampleData() {
 	var cMod = 0.0;
 	$('input[name="ctermMod"]').val(cMod);
 	
-	/*
+	
 	var sMods = [];
-	sMods.push(new Modification(AminoAcid.C, 57));
-	sMods.push(new Modification(AminoAcid.M, 24));
+	sMods.push({aminoAcid: 'C', modMass: 57});
+	sMods.push({aminoAcid: 'M', modMass: 24});
 	for(var i = 0; i < sMods.length; i += 1) {
 		var mod = sMods[i];
 		var modItem = addToStaticModList();
-		modItem.find("input[name='staticMod_aa']").val(mod.aa.code);
+		modItem.find("input[name='staticMod_aa']").val(mod.aminoAcid);
 		modItem.find("input[name='staticMod_mass']").val(mod.modMass);
 	}
-	*/
+	
 	
 	var vMods = [];
-	vMods[0] = new VariableModification(14, 16.0, AminoAcid.M);
+	vMods[0] = {index: 14, modMass: 16.0, aminoAcid: 'M'};
 	for(var i = 0; i < vMods.length; i += 1) {
 		var mod = vMods[i];
 		var modItem = addToVarModList();
-		modItem.find("input[name='varMod_aa']").val(mod.aa.code);
+		modItem.find("input[name='varMod_aa']").val(mod.aminoAcid);
 		modItem.find("input[name='varMod_mass']").val(mod.modMass);
-		modItem.find("input[name='varMod_pos']").val(mod.position);
+		modItem.find("input[name='varMod_pos']").val(mod.index);
 	}
 	
 	
