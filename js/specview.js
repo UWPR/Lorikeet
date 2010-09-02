@@ -31,6 +31,27 @@
 				
 				options = opts;
 				
+				// read the static modifications
+				var parsedStaticMods = [];
+				for(var i = 0; i < options.staticMods.length; i += 1) {
+					var mod = options.staticMods[i];
+					parsedStaticMods[i] = new Modification(AminoAcid.get(mod.aminoAcid), mod.modMass);
+				}
+				options.staticMods = parsedStaticMods;
+				
+				// read the variable modifications
+				var parsedVarMods = [];
+				for(var i = 0; i < options.variableMods.length; i += 1) {
+					// position: 14, modMass: 16.0, aminoAcid: 'M'
+					var mod = options.variableMods[i];
+					parsedVarMods[i] = new VariableModification(
+											mod.index,
+											mod.modMass,
+											AminoAcid.get(mod.aminoAcid)
+										);
+				}
+				options.variableMods = parsedVarMods;
+				
 				var input = new Peptide(options.sequence, options.staticMods, options.variableMods,
 										options.ntermMod, options.ctermMod);
 				
@@ -1101,7 +1122,7 @@
 			modInfo += 'Static Modifications: ';
 			for(var i = 0; i < options.staticMods.length; i += 1) {
 				var mod = options.staticMods[i];
-				if(i > 0) modInfo += ', ';
+				//if(i > 0) modInfo += ', ';
 				modInfo += "<div><b>"+mod.aa.code+": "+mod.modMass+"</b></div>";
 			}
 			modInfo += '</div>';
@@ -1123,7 +1144,7 @@
 			modInfo += 'Variable Modifications: ';
 			for(var i = 0; i < uniqvarmods.length; i += 1) {
 				var mod = uniqvarmods[i];
-				if(i > 0) modInfo += ', ';
+				//if(i > 0) modInfo += ', ';
 				modInfo += "<div><b>"+mod.aa.code+": "+mod.modMass+"</b></div>";
 			}
 			modInfo += '</div>';
