@@ -433,7 +433,7 @@
 			
 			// remove the class after printing so that if the user prints 
 			// via the browser's print menu the whole page is printed
-			container.find(".bar").addClass('noprint');
+			container.find(".bar").removeClass('noprint');
 			container.find('#optionsTable').removeClass('noprint');
 			container.find('#ionTableLoc1').removeClass('noprint');
 			container.find('#ionTableLoc2').removeClass('noprint');
