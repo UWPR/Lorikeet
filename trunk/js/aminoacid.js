@@ -59,5 +59,5 @@ function _getAA(aaCode) {
 	if(AminoAcid.aa[aaCode])
 		return AminoAcid.aa[aaCode];
 	else
-		return null;
+		return new AminoAcid(aaCode, aaCode, 0.0, 0.0);
 }

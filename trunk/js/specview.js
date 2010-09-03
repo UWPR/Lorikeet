@@ -153,21 +153,28 @@
 		
 		// mark the current precursor peak
 		if(options.precursorPeaks) {
-			var x,y, diff, theoricalMz;
+			var x,y, diff, precursorMz;
 			
-			if(options.sequence && options.charge) {
+			// If we are given a precursor m/z use it
+			if(options.precursorMz) {
+				precursorMz = options.precursorMz;
+			}
+			// Otherwise calculate a theoretical m/z from the given sequence and charge
+			else if(options.sequence && options.charge) {
 				var mass = Peptide.getSeqMassMono(options.sequence, options.sequence.length, "n") + Ion.MASS_O + Ion.MASS_H;
-				theoricalMz = Ion.getMz(mass, options.charge);
+				precursorMz = Ion.getMz(mass, options.charge);
 			}
 			
-			if(theoricalMz) {
+			if(precursorMz) {
 				// find the closest actual peak
-				for(var i = 0; i < precursorPeaks.length; i += 1) {
-					var d = Math.abs(x,theoricalMz);
+				for(var i = 0; i < options.precursorPeaks.length; i += 1) {
+					var pk = options.precursorPeaks[i];
+					var d = Math.abs(pk[0] - precursorMz);
 					if(!diff || d < diff) {
-						x = precursorPeaks[i][0];
-						y = precursorPeaks[i][1];
+						x = pk[0];
+						y = pk[1];
 						diff = d;
+						console.log(x+", "+y+", "+d);
 					}
 				}
 				var o = ms1plot.pointOffset({ x: x, y: y});
