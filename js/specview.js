@@ -188,7 +188,6 @@
 		// mark the scan number if we have it
 		if(options.ms1scan) {
 			o = ms1plot.getPlotOffset();
-			console.log(o);
 			placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top+4) + 'px;color:#666;font-size:smaller">MS1 scan: '+options.ms1scan+'</div>');
 		}
 
@@ -329,7 +328,7 @@
 	    makePlotResizable();
 	    
 	    // PRINT SPECTRUM
-	    //makePlotPrintable();
+	    printPlot();
 		
 	}
 	
@@ -414,9 +413,36 @@
 		});
 	}
 	
-	function makePlotPrintable() {
+	function printPlot() {
 		container.find("#printLink").click(function() {
-			var canvas = plot.getCanvas();
+			
+			var divToPrint = $('#msmsplot');
+			container.siblings().addClass('noprint');
+			container.parentsUntil('body').addClass('noprint');
+			container.find(".bar").addClass('noprint');
+			container.find('#optionsTable').addClass('noprint');
+			container.find('#ionTableLoc1').addClass('noprint');
+			container.find('#ionTableLoc2').addClass('noprint');
+			container.find('#viewOptionsDiv').addClass('noprint');
+			
+			plotOptions.series.peaks.print = true; // draw the labels in the DOM for crisper print output
+			plotAccordingToChoices();
+			window.print();
+			
+			plotOptions.series.peaks.print = false; // revert back to canvas labels for faster drawing
+			plotAccordingToChoices();
+			
+			// remove the class after printing so that if the user prints 
+			// via the browser's print menu the whole page is printed
+			$('#lorikeet').siblings().removeClass('noprint');
+			$('#lorikeet').parentsUntil('body').removeClass('noprint');
+			container.find(".bar").addClass('noprint');
+			container.find('#optionsTable').removeClass('noprint');
+			container.find('#ionTableLoc1').removeClass('noprint');
+			container.find('#ionTableLoc2').removeClass('noprint');
+			container.find('#viewOptionsDiv').removeClass('noprint');
+			
+			/*var canvas = plot.getCanvas();
 			var iWidth=3500;
 			var iHeight = 3050;
 			var oSaveCanvas = document.createElement("canvas");
@@ -428,28 +454,12 @@
 			oSaveCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, iWidth, iHeight);
 			
 			var dataURL = oSaveCanvas.toDataURL("image/png");
-			window.location = dataURL;
+			window.location = dataURL;*/
+			
+			
 		});
 	}
 	
-	var scaleCanvas = function(oCanvas, iWidth, iHeight) {
-		if (iWidth && iHeight) {
-			var oSaveCanvas = document.createElement("canvas");
-			oSaveCanvas.width = iWidth;
-			oSaveCanvas.height = iHeight;
-			oSaveCanvas.style.width = iWidth+"px";
-			oSaveCanvas.style.height = iHeight+"px";
-
-			var oSaveCtx = oSaveCanvas.getContext("2d");
-
-			oSaveCtx.drawImage(oCanvas, 0, 0, oCanvas.width, oCanvas.height, 0, 0, iWidth, iHeight);
-			return oSaveCanvas;
-		}
-		return oCanvas;
-	}
-
-	
-
 	// -----------------------------------------------
 	// SELECTED DATASETS
 	// -----------------------------------------------
@@ -459,7 +469,7 @@
 		var selectedIonTypes = getSelectedIonTypes();
 		
 		calculateTheoreticalSeries(selectedIonTypes);
-		var data = [{data: options.peaks, color: "#bbbbbb"}];
+		var data = [{data: options.peaks, color: "#bbbbbb", labelType: 'none'}];
 		
 		var seriesMatches = getSeriesMatches(selectedIonTypes);
 		for(var i = 0; i < seriesMatches.length; i += 1) {
@@ -832,7 +842,7 @@
 	// -----------------------------------------------
 	function initContainer(container, options) {
 		
-		var rowspan = options.ms1peaks ? 4 : 3;
+		var rowspan = options.ms1peaks ? 3 : 2;
 		container.addClass("mainContainer");
 		
 		var parentTable = '<table cellpadding="0" cellspacing="5"> ';
@@ -840,18 +850,18 @@
 		parentTable += '<tr> ';
 		
 		// Header
-		parentTable += '<td colspan="4" class="bar noprint"> ';
+		parentTable += '<td colspan="4" class="bar"> ';
 		parentTable += '</div> ';
 		parentTable += '</td> ';
 		parentTable += '</tr> ';
 	
 		// options table
 		parentTable += '<tr> ';
-		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="optionsTable" class="noprint"> ';
+		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="optionsTable"> ';
 		parentTable += '</td> ';
 		
 		// placeholder for sequence, m/z, scan number etc
-		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="bottom" align="center" class="printable"> '; 
+		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="bottom" align="center"> '; 
 		parentTable += '<div id="seqinfo" style="width:100%;"></div> ';
 		// placeholder for file name, scan number and charge
 		parentTable += '<div id="fileinfo" style="width:100%;"></div> ';
@@ -859,7 +869,7 @@
 		
 		
 		// placeholder for the ion table
-		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="ionTableLoc1" class="noprint"> ';
+		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="ionTableLoc1" > ';
 		parentTable += '<div id="ionTableDiv">';
 		parentTable += '<span id="moveIonTable" class="font_small link">[Click]</span> <span class="font_small">to move table</span>';
 		// placeholder for file name, scan number, modifications etc.
@@ -869,17 +879,13 @@
 		parentTable += '</tr> ';
 		
 		
-		// placeholders for the plots
+		// placeholders for the ms/ms plot
 		parentTable += '<tr> ';
 		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> '; 
-		parentTable += '<div id="msmsplot" style="width:'+options.width+'px;height:'+options.height+'px;"></div> ';
-		parentTable += '</td> ';
-		parentTable += '</tr> ';
+		parentTable += '<div id="msmsplot" align="bottom" style="width:'+options.width+'px;height:'+options.height+'px;"></div> ';
 		
 		// placeholder for viewing options (zoom, plot size etc.)
-		parentTable += '<tr> ';
-		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center" class="noprint"> '; 
-		parentTable += '<div id="viewOptionsDiv"></div> ';
+		parentTable += '<div id="viewOptionsDiv" align="top" style="margin-top:15px;"></div> ';
 		parentTable += '</td> ';
 		parentTable += '</tr> ';
 		
@@ -1166,6 +1172,7 @@
 		myContent += 'X:<input id="zoom_x" type="checkbox" value="X" checked="checked"/> ';
 		myContent += '&nbsp;Y:<input id="zoom_y" type="checkbox" value="Y" /> ';
 		myContent += '&nbsp;<input id="resetZoom" type="button" value="Zoom Out" /> ';
+		myContent += '&nbsp;<input id="printLink" type="button" value="Print" /> ';
 		myContent += '</nobr> ';
 		
 		myContent += '&nbsp;&nbsp;';
