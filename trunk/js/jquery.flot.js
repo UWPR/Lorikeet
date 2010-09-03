@@ -100,6 +100,7 @@
                     },
                     peaks: {
                         lineWidth: 1, // in pixels
+                        print: false,
                     },
                     bars: {
                         show: false,
@@ -1772,15 +1773,20 @@
                 		else if(series.labelType == 'mz') {
                 			var label = x1.toFixed(2);
                 		}
-                		var metrics = ctx.measureText(label);
-                		// appending a div is too slow
-                		//placeholder.append('<div style="position:absolute;left:' +myx1 + 'px;top:' +(axisy.p2c(y2) + yoffset)  + 'px;color:#666;font-size:smaller">'+label+'</div>');
-                		ctx.save();
-                		ctx.translate(myx1, axisy.p2c(y2) + yoffset)
-                		ctx.rotate(-90 * Math.PI/180);
-                		ctx.fillText(label, (metrics.width / 2)+1 ,3);
-                		ctx.restore();
                 		
+                		if(series.peaks.print) {
+                			// appending a div is too slow
+                			o = plot.getPlotOffset();
+	                		placeholder.append('<div style="position:absolute;left:' +(myx1+o.left-2) + 'px;top:' +(axisy.p2c(y2) + yoffset - o.top - 2)  + 'px;color:'+series.color+'">'+label+'</div>');
+                		}
+                		else {
+	                		var metrics = ctx.measureText(label);
+	                		ctx.save();
+	                		ctx.translate(myx1, axisy.p2c(y2) + yoffset)
+	                		ctx.rotate(-90 * Math.PI/180);
+	                		ctx.fillText(label, (metrics.width / 2)+1 ,3);
+	                		ctx.restore();
+                		}
                 	}
                 }
             }

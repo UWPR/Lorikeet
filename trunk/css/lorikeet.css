@@ -30,6 +30,7 @@ div.mainContainer div.bar {
       	background-color:#FFFFEF; 
       	border:1px solid black;
       	padding: 5px;
+      	
       }
       
       div.mainContainer td.optionCell {
@@ -51,6 +52,7 @@ div.mainContainer div.bar {
       	border: 1px solid #666666;
       	text-align: center;
       	background-color:#FFFFFF;
+      	font-size: 8pt;
       }
       #ionTable td.seq {
       	font-weight: bold;
@@ -77,8 +79,7 @@ div.mainContainer div.bar {
 	color:sienna;
 }
 .font_small {
-	/*font-size: 8pt;*/
-	font-size: smaller;
+	font-size: 8pt;
 }
 
       /*
