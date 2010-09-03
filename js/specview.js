@@ -55,8 +55,7 @@
 				var input = new Peptide(options.sequence, options.staticMods, options.variableMods,
 										options.ntermMod, options.ctermMod);
 				
-				container = $(this);
-				initContainer(container, options);
+				container = initContainer($(this), options);
 				makeOptionsTable();
 				makeViewingOptions();
 				showSequenceInfo();
@@ -180,7 +179,6 @@
 			    ctx.lineTo(o.left-10, o.top-5);
 			    ctx.fillStyle = "#008800";
 			    ctx.fill();
-			    console.log(o);
 			    placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top-4) + 'px;color:#666;font-size:smaller">'+x.toFixed(2)+'</div>');
 			}
 		}
@@ -416,31 +414,36 @@
 	function printPlot() {
 		container.find("#printLink").click(function() {
 			
-			var divToPrint = $('#msmsplot');
-			container.siblings().addClass('noprint');
-			container.parentsUntil('body').addClass('noprint');
+			// create another div and move the plots into that div
+			$(document.body).append('<div id="tempPrintDiv"></div>');
+			$("#tempPrintDiv").append($("#lorikeet_content").detach());
+			$("#tempPrintDiv").siblings().addClass("noprint");
+			
+			
 			container.find(".bar").addClass('noprint');
 			container.find('#optionsTable').addClass('noprint');
 			container.find('#ionTableLoc1').addClass('noprint');
 			container.find('#ionTableLoc2').addClass('noprint');
 			container.find('#viewOptionsDiv').addClass('noprint');
 			
-			plotOptions.series.peaks.print = true; // draw the labels in the DOM for crisper print output
+			plotOptions.series.peaks.print = true; // draw the labels in the DOM for sharper print output
 			plotAccordingToChoices();
 			window.print();
 			
-			plotOptions.series.peaks.print = false; // revert back to canvas labels for faster drawing
-			plotAccordingToChoices();
 			
 			// remove the class after printing so that if the user prints 
 			// via the browser's print menu the whole page is printed
-			$('#lorikeet').siblings().removeClass('noprint');
-			$('#lorikeet').parentsUntil('body').removeClass('noprint');
 			container.find(".bar").addClass('noprint');
 			container.find('#optionsTable').removeClass('noprint');
 			container.find('#ionTableLoc1').removeClass('noprint');
 			container.find('#ionTableLoc2').removeClass('noprint');
 			container.find('#viewOptionsDiv').removeClass('noprint');
+			$("#tempPrintDiv").siblings().removeClass("noprint");
+			
+			// move the plots back to the original location
+			$("#lorikeet").append($("#lorikeet_content").detach());
+			$("#tempPrintDiv").remove();
+			
 			
 			/*var canvas = plot.getCanvas();
 			var iWidth=3500;
@@ -840,9 +843,12 @@
 	// -----------------------------------------------
 	// INITIALIZE THE CONTAINER
 	// -----------------------------------------------
-	function initContainer(container, options) {
+	function initContainer(div, options) {
 		
 		var rowspan = options.ms1peaks ? 3 : 2;
+		
+		div.append('<div id="lorikeet_content"></div>');
+		container = $("#lorikeet_content");
 		container.addClass("mainContainer");
 		
 		var parentTable = '<table cellpadding="0" cellspacing="5"> ';
@@ -881,7 +887,7 @@
 		
 		// placeholders for the ms/ms plot
 		parentTable += '<tr> ';
-		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> '; 
+		parentTable += '<td id="msmsplot_td" style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> '; 
 		parentTable += '<div id="msmsplot" align="bottom" style="width:'+options.width+'px;height:'+options.height+'px;"></div> ';
 		
 		// placeholder for viewing options (zoom, plot size etc.)
@@ -892,7 +898,7 @@
 		// placeholder for ms1 plot (if data is available)
 		if(options.ms1peaks && options.ms1peaks.length > 0) {
 			parentTable += '<tr> ';
-			parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> '; 
+			parentTable += '<td id="msplot_td" style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> '; 
 			parentTable += '<div id="msplot" style="width:'+options.width+'px;height:100px;"></div> ';
 			parentTable += '</td> ';
 			parentTable += '</tr> ';
@@ -911,6 +917,8 @@
 		parentTable += '</table> ';
 		
 		container.append(parentTable);
+		
+		return container;
 	}
 	
 	function makeIonTableMovable() {
