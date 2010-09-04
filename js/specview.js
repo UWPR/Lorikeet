@@ -205,7 +205,7 @@
 						diff = d;
 					}
 				}
-				if(diff <= 0.5.0) {
+				if(diff <= 0.5) {
 					var o = ms1plot.pointOffset({ x: x, y: y});
 				    var ctx = ms1plot.getCanvas().getContext("2d");
 				    ctx.beginPath();
