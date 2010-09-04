@@ -1677,92 +1677,107 @@
         			ctx.font = '12px Arial';
         		
                 var incr = ps;
-                if(series.lines.peaks)
-                	incr = ps*2;
                 
                 var l = -1;
+                
+                var lastx_coord, lasty1_coord, lasty2_coord, lasty;
+                
                 for (var i = 0; i < points.length; i += ps) {
                 	
-                    var x1 = points[i], y1 = 0,
-                    x2 = x1, y2 = points[i+1];
+                    var x = points[i], y1 = 0,
+                    y2 = points[i+1], orig_y = points[i+1];
                     
-                    if (x1 == null || x2 == null)
+                    if (x == null)
                         continue;
 
-                    l += 1;
-                    // clip with ymin
-                    if (y1 <= y2 && y1 < axisy.min) {
-                        if (y2 < axisy.min)
-                            continue;   // line segment is outside
-                        // compute new intersection point
-                        x1 = (axisy.min - y1) / (y2 - y1) * (x2 - x1) + x1;
-                        y1 = axisy.min;
-                    }
-                    else if (y2 <= y1 && y2 < axisy.min) {
-                        if (y1 < axisy.min)
-                            continue;
-                        x2 = (axisy.min - y1) / (y2 - y1) * (x2 - x1) + x1;
-                        y2 = axisy.min;
-                    }
-
-                    // clip with ymax
-                    if (y1 >= y2 && y1 > axisy.max) {
-                        if (y2 > axisy.max)
-                            continue;
-                        x1 = (axisy.max - y1) / (y2 - y1) * (x2 - x1) + x1;
-                        y1 = axisy.max;
-                    }
-                    else if (y2 >= y1 && y2 > axisy.max) {
-                        if (y1 > axisy.max)
-                            continue;
-                        x2 = (axisy.max - y1) / (y2 - y1) * (x2 - x1) + x1;
-                        y2 = axisy.max;
-                    }
-
                     // clip with xmin
-                    if (x1 <= x2 && x1 < axisx.min) {
-                        if (x2 < axisx.min)
-                            continue;
-                        y1 = (axisx.min - x1) / (x2 - x1) * (y2 - y1) + y1;
-                        x1 = axisx.min;
-                    }
-                    else if (x2 <= x1 && x2 < axisx.min) {
-                        if (x1 < axisx.min)
-                            continue;
-                        y2 = (axisx.min - x1) / (x2 - x1) * (y2 - y1) + y1;
-                        x2 = axisx.min;
+                    if (x < axisx.min) {
+                        continue;
                     }
 
                     // clip with xmax
-                    if (x1 >= x2 && x1 > axisx.max) {
-                        if (x2 > axisx.max)
-                            continue;
-                        y1 = (axisx.max - x1) / (x2 - x1) * (y2 - y1) + y1;
-                        x1 = axisx.max;
+                    if (x > axisx.max) {
+                        continue;
                     }
-                    else if (x2 >= x1 && x2 > axisx.max) {
-                        if (x1 > axisx.max)
-                            continue;
-                        y2 = (axisx.max - x1) / (x2 - x1) * (y2 - y1) + y1;
-                        x2 = axisx.max;
+                    
+                    // calculate the x-coordinate
+                    var myx = axisx.p2c(x) + xoffset
+                    var tempx = Math.round(myx);
+                    if(tempx > myx)
+                    	myx = tempx - 0.5;
+                    else
+                    	myx = tempx + 0.5;
+                    
+                    
+                    // clip with ymin ; assume y1 always < y2
+                    if (y1 < axisy.min) {
+                        if (y2 < axisy.min)
+                            continue;   // line segment is outside
+                        y1 = axisy.min;
                     }
 
-                    ctx.beginPath();
+                    // clip with ymax ; assume y2 always > y1
+                    if (y2 > axisy.max) {
+                        if (y1 > axisy.max)
+                            continue;
+                        y2 = axisy.max;
+                    }
+
+
+                    var myy1 = axisy.p2c(y1) + yoffset;
+                    var myy2 = axisy.p2c(y2) + yoffset;
                     
-                    var myx1 = axisx.p2c(x1) + xoffset
-                    var tempx = Math.round(myx1);
-                    if(tempx > myx1)
-                    	myx1 = tempx - 0.5;
-                    else
-                    	myx1 = tempx + 0.5;
-                    
-                    var myx2 = myx1;
-                    
-                    ctx.moveTo(myx1, axisy.p2c(y1) + yoffset);
-                    ctx.lineTo(myx2, axisy.p2c(y2) + yoffset);
-                	ctx.stroke();
-                	
-                	if(series.labelType != 'none') {
+                    // If we have a label associated with the peaks we will draw them all
+                    // otherwise we will draw the most intense peak at every pixel to reduce drawing time
+                    if(series.labelType != 'none') {
+                    	l += 1;
+	                	drawPeak(myx, myy1, myy2);
+	                	drawLabel(myx, myy2, x, y2, axisx, axisy, l);
+                    }
+                    else {
+                    	if(lastx_coord && lastx_coord < myx) {
+                    		l += 1;
+	                    	// draw the most intense peak at the last coordinate
+	                    	drawPeak(lastx_coord, lasty1_coord, lasty2_coord);
+	                    	lasty = -1;
+	                    }
+                    	if(!lastx_coord || orig_y > lasty) {
+                    		lastx_coord = myx;
+                    		lasty1_coord = myy1;
+                    		lasty2_coord = myy2;
+                    		lasty = orig_y;
+                    	}
+                    }
+                }
+                
+                // draw the last peak if we are only drawing most intense peaks at each pixel
+                if(series.labelType == 'none') {
+                	if(lastx_coord) {
+                		l += 1;
+                    	// draw the most intense peak at the last coordinate
+                    	drawPeak(lastx_coord, lasty1_coord, lasty2_coord);
+                    }
+                }
+                console.log("# peaks drawn: "+l);
+            }
+        	
+        	function drawPeak(x_coord, y1_coord, y2_coord) {
+        		ctx.beginPath();
+        		ctx.moveTo(x_coord, y1_coord);
+                ctx.lineTo(x_coord, y2_coord);
+            	ctx.stroke();
+        	}
+        	
+        	function drawLabel(myx, myy2, x, y2, axisx, axisy, l) {
+        		
+        		if(series.labelType != 'none') {
+            		
+            		var drawLabel = true;
+            		
+            		if(y2 == axisy.max)
+            			drawLabel = false;;
+            		
+            		if(drawLabel) {
                 		var label = '';
                 		if(series.labelType == 'ion') {
 		                	if(series.labels) {
@@ -1771,25 +1786,26 @@
 		                	}
                 		}
                 		else if(series.labelType == 'mz') {
-                			var label = x1.toFixed(2);
+                			var label = x.toFixed(2);
                 		}
                 		
                 		if(series.peaks.print) {
                 			// appending a div is too slow
                 			o = plot.getPlotOffset();
-	                		placeholder.append('<div style="position:absolute;left:' +(myx1+o.left-2) + 'px;top:' +(axisy.p2c(y2) + yoffset - o.top - 2)  + 'px;color:'+series.color+'">'+label+'</div>');
+	                		placeholder.append('<div style="position:absolute;left:' +(myx+o.left-2) + 'px;top:' +(myy2 - o.top - 2)  + 'px;color:'+series.color+'">'+label+'</div>');
                 		}
                 		else {
 	                		var metrics = ctx.measureText(label);
 	                		ctx.save();
-	                		ctx.translate(myx1, axisy.p2c(y2) + yoffset)
+	                		ctx.translate(myx, myy2)
 	                		ctx.rotate(-90 * Math.PI/180);
 	                		ctx.fillText(label, (metrics.width / 2)+1 ,3);
 	                		ctx.restore();
                 		}
-                	}
-                }
-            }
+            		}
+            	}
+        		
+        	}
         	
         	ctx.save();
             ctx.translate(plotOffset.left, plotOffset.top);

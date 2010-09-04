@@ -2,7 +2,6 @@
 	.noprint {
          display:none;
     }
-    
 }
 
 
@@ -24,62 +23,68 @@ div.mainContainer {
 
 div.mainContainer div.bar {
 	background-color:#F5F5DC;
-      	color:black; 
-     	}
-      div.mainContainer td {
-      	background-color:#FFFFEF; 
-      	border:1px solid black;
-      	padding: 5px;
-      	
-      }
+    color:black; 
+}
+div.mainContainer td {
+	background-color:#FFFFEF; 
+	border:1px solid black;
+	padding: 5px;
+}
       
-      div.mainContainer td.optionCell {
-      	background-color: white; 
-      	border: 1px dotted #666666; 
-      	padding: 5px;
-      	margin:5px;
-      }
+div.mainContainer td.optionCell {
+	background-color: white; 
+	border: 1px dotted #666666; 
+	padding: 5px;
+	margin:5px;
+}
       
-      #ionTable {
-      	border-collapse:collapse;
+div.mainContainer #ionTable {
+    border-collapse:collapse;
 	border-color:#DDDDDD;
 }
-      #ionTable th {
-      	background-color:#BDB76B;
-      	border: 1px solid #666666;
-      }
-      #ionTable td {
-      	border: 1px solid #666666;
-      	text-align: center;
-      	background-color:#FFFFFF;
-      	font-size: 8pt;
-      }
-      #ionTable td.seq {
-      	font-weight: bold;
-      	background-color:#BDB76B;
-      }
-      #ionTable td.modified{
-      	background-color:gold;
-      }
-      #ionTable td.numCell {
-      	background-color:#F5F5DC;
-      	color:#777777;
-      }
-      #ionTable td.matchIon {
-      	font-weight:bold;
-      	opacity:0.8;
-      	filter: alpha(opacity=80); /*For IE*/
-      	-moz-opacity:0.8; /*Old Mozilla browsers*/
-      	color:white;
-      }
+div.mainContainer #ionTable th {
+	background-color:#BDB76B;
+	border: 1px solid #666666;
+}
+div.mainContainer #ionTable td {
+	border: 1px solid #666666;
+	text-align: center;
+	background-color:#FFFFFF;
+	font-size: 8pt;
+}
+div.mainContainer #ionTable td.seq {
+	font-weight: bold;
+	background-color:#BDB76B;
+}
+div.mainContainer #ionTable td.modified{
+	background-color:gold;
+}
+div.mainContainer #ionTable td.numCell {
+	background-color:#F5F5DC;
+	color:#777777;
+}
+div.mainContainer #ionTable td.matchIon {
+	font-weight:bold;
+	opacity:0.8;
+	filter: alpha(opacity=80); /*For IE*/
+	-moz-opacity:0.8; /*Old Mozilla browsers*/
+	color:white;
+}
       
-      .link {
+div.mainContainer .link {
 	text-decoration: underline;
 	cursor:pointer;
 	color:sienna;
 }
-.font_small {
+div.mainContainer .font_small {
 	font-size: 8pt;
+}
+div.mainContainer .zoom_out_link {
+	background-image: url('../images/lorikeet/zoom_out.png');
+	background-repeat: no-repeat;
+	width:20px;
+	height:20px;
+	cursor:pointer;
 }
 
       /*
