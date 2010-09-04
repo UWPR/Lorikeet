@@ -20,6 +20,7 @@
 					ms1scan: null,
 					precursorPeaks: null,
 					precursorPeakClickFn: null,
+					zoomMs1: false,
 					width: 750, 	// width of the ms/ms plot
 					height: 450, 	// height of the ms/ms plot
 					massError: 0.5, // mass tolerance for labeling peaks
@@ -65,8 +66,27 @@
 				massError = options.massError;
 				
 				createPlot(getDatasets()); // Initial MS/MS Plot
-				if(options.ms1peaks && options.ms1peaks.length > 0) 
-					createMs1Plot();
+				if(options.ms1peaks && options.ms1peaks.length > 0) {
+					if(options.zoomMs1 && options.precursorMz) {
+						ms1zoomRange = {xaxis: {}, yaxis: {}};
+						ms1zoomRange.xaxis.from = options.precursorMz - 5.0;
+						ms1zoomRange.xaxis.to = options.precursorMz + 5.0;
+						max_intensity = 0;
+						for(var j = 0; j < options.ms1peaks.length; j += 1) {
+							var pk = options.ms1peaks[j];
+							if(pk[0] < options.precursorMz - 5.0)
+								continue;
+							if(pk[0] > options.precursorMz + 5.0)
+								break;
+							if(pk[1] > max_intensity)
+								max_intensity = pk[1];
+						}
+						ms1zoomRange.yaxis.from = 0.0;
+						ms1zoomRange.yaxis.to = max_intensity;
+					}
+					createMs1Plot(ms1zoomRange);
+					setupMs1PlotInteractions();
+				}
 				setupInteractions();
 				
 				makeIonTable();
@@ -102,7 +122,8 @@
 	
 	var plot;					// MS/MS plot
 	var ms1plot;				// MS1 plot (only created when data is available)
-	var zoomRange; 				// for zooming
+	var zoomRange; 				// for zooming MS/MS plot
+	var ms1zoomRange;
 	var previousPoint = null; 	// for tooltips
 	
 	var ionSeries = {a: [], b: [], c: [], x:[], y: [], z: []};
@@ -125,9 +146,9 @@
 		}
    	}
 	
-	function createMs1Plot() {
+	function createMs1Plot(zoomrange) {
 		
-		var data = [{data: options.ms1peaks, color: "#bbbbbb", hoverable: false, clickable: false}];
+		var data = [{data: options.ms1peaks, color: "#bbbbbb", labelType: 'none', hoverable: false, clickable: false}];
 		if(options.precursorPeaks) {
 			data.push({data: options.precursorPeaks, color: "#ff0000", hoverable: true, clickable: true});
 		}
@@ -144,9 +165,17 @@
 						clickable: true,
 						borderWidth: 1,
 						labelMargin: 1},
+				selection: { mode: "xy", color: "#F0E68C" },
 		        xaxis: { tickLength: 2, tickColor: "#000" },
 		    	yaxis: { tickLength: 0, tickColor: "#fff", ticks: [], labelWidth: labelWidth }
 		};
+		
+		if(zoomrange) {
+			ms1plotOptions.xaxis.min = zoomrange.xaxis.from;
+			ms1plotOptions.xaxis.max = zoomrange.xaxis.to;
+			ms1plotOptions.yaxis.min = zoomrange.yaxis.from;
+			ms1plotOptions.yaxis.max = zoomrange.yaxis.to;
+		}
 		
 		var placeholder = container.find("#msplot");
 		ms1plot = $.plot(placeholder, data, ms1plotOptions);
@@ -174,29 +203,47 @@
 						x = pk[0];
 						y = pk[1];
 						diff = d;
-						console.log(x+", "+y+", "+d);
 					}
 				}
-				var o = ms1plot.pointOffset({ x: x, y: y});
-			    var ctx = ms1plot.getCanvas().getContext("2d");
-			    ctx.beginPath();
-			    ctx.moveTo(o.left-10, o.top-5);
-			    ctx.lineTo(o.left-10, o.top + 5);
-			    ctx.lineTo(o.left-10 + 10, o.top);
-			    ctx.lineTo(o.left-10, o.top-5);
-			    ctx.fillStyle = "#008800";
-			    ctx.fill();
-			    placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top-4) + 'px;color:#666;font-size:smaller">'+x.toFixed(2)+'</div>');
+				if(diff <= 0.5.0) {
+					var o = ms1plot.pointOffset({ x: x, y: y});
+				    var ctx = ms1plot.getCanvas().getContext("2d");
+				    ctx.beginPath();
+				    ctx.moveTo(o.left-10, o.top-5);
+				    ctx.lineTo(o.left-10, o.top + 5);
+				    ctx.lineTo(o.left-10 + 10, o.top);
+				    ctx.lineTo(o.left-10, o.top-5);
+				    ctx.fillStyle = "#008800";
+				    ctx.fill();
+				    placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top-4) + 'px;color:#000;font-size:smaller">'+x.toFixed(2)+'</div>');
+				}
 			}
 		}
 		
 		// mark the scan number if we have it
+		o = ms1plot.getPlotOffset();
 		if(options.ms1scan) {
-			o = ms1plot.getPlotOffset();
 			placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top+4) + 'px;color:#666;font-size:smaller">MS1 scan: '+options.ms1scan+'</div>');
 		}
+		
+		// zoom out icon on plot right hand corner
+		if(zoomrange) {
+			placeholder.append('<div id="ms1plot_zoom_out" class="zoom_out_link"  style="position:absolute; left:'
+					+ (o.left + ms1plot.width() - 20) + 'px;top:' + (o.top+4) + 'px;"></div>');
+			$("#ms1plot_zoom_out").click( function() {
+				ms1zoomRange = null;
+				createMs1Plot();
+			});
+		}
+		
 
-	    
+	}
+	
+	function setupMs1PlotInteractions() {
+		
+		var placeholder = container.find("#msplot");
+		
+		
 		// allow clicking on plot if we have a function to handle the click
 		if(options.precursorPeakClickFn != null) {
 			placeholder.bind("plotclick", function (event, pos, item) {
@@ -204,11 +251,16 @@
 		        if (item) {
 		          //highlight(item.series, item.datapoint);
 		        	options.precursorPeakClickFn(item.datapoint[0]);
-		        	console.log(item.datapoint[0]);
 		        }
 		    });
 		}
-
+		
+		// allow zooming the plot
+		placeholder.bind("plotselected", function (event, ranges) {
+			createMs1Plot(ranges);
+			ms1zoomRange = ranges;
+	    });
+		
 	}
 	
 	function createPlot(datasets) {
@@ -225,6 +277,14 @@
     		
     		plot = $.plot(container.find("#msmsplot"), datasets,
                       $.extend(true, {}, plotOptions, selectOpts));
+    		
+    		// zoom out icon on plot right hand corner
+    		var o = plot.getPlotOffset();
+    		container.find("#msmsplot").append('<div id="ms2plot_zoom_out" class="zoom_out_link" style="position:absolute; left:'
+					+ (o.left + plot.width() - 20) + 'px;top:' + (o.top+4) + 'px"></div>');
+			$("#ms2plot_zoom_out").click( function() {
+				resetZoom();
+			});
     	}
     	// we have re-calculated and re-drawn everything..
     	massTypeChanged = false;
@@ -255,9 +315,7 @@
 	    
 		// RESET ZOOM
 		container.find("#resetZoom").click(function() {
-			zoomRange = null;
-			setMassError();
-			createPlot(getDatasets());	
+			resetZoom();
 	   	});
 		
 		// UPDATE
@@ -337,6 +395,12 @@
 		
 	}
 	
+	function resetZoom() {
+		zoomRange = null;
+		setMassError();
+		createPlot(getDatasets());	
+	}
+	
 	function plotAccordingToChoices() {
         var data = getDatasets();
 
@@ -396,7 +460,7 @@
 				plotAccordingToChoices();
 				if(options.ms1peaks && options.ms1peaks.length > 0) {
 					container.find("#msplot").css({width: width});
-					createMs1Plot();
+					createMs1Plot(ms1zoomRange);
 				}
 				container.find("#slider_width_val").text(width);
 			}
