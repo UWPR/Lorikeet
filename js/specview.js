@@ -150,7 +150,10 @@
 		
 		var data = [{data: options.ms1peaks, color: "#bbbbbb", labelType: 'none', hoverable: false, clickable: false}];
 		if(options.precursorPeaks) {
-			data.push({data: options.precursorPeaks, color: "#ff0000", hoverable: true, clickable: true});
+			if(options.precursorPeakClickFn)
+				data.push({data: options.precursorPeaks, color: "#ff0000", hoverable: true, clickable: true});
+			else
+				data.push({data: options.precursorPeaks, color: "#ff0000", hoverable: false, clickable: false});
 		}
 		
 		// the MS/MS plot should have been created by now.  This is a hack to get the plots aligned.
