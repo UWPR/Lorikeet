@@ -86,6 +86,13 @@ div.mainContainer .zoom_out_link {
 	height:20px;
 	cursor:pointer;
 }
+div.mainContainer .zoom_in_link {
+	background-image: url('../images/lorikeet/zoom_in.png');
+	background-repeat: no-repeat;
+	width:20px;
+	height:20px;
+	cursor:pointer;
+}
 
       /*
  * jQuery UI Slider @VERSION
