@@ -944,7 +944,7 @@
 	// -----------------------------------------------
 	function initContainer(div, options) {
 		
-		var rowspan = options.ms1peaks ? 2 : 1;
+		var rowspan = 2;
 		
 		div.append('<div id="lorikeet_content"></div>');
 		container = $("#lorikeet_content");
@@ -955,7 +955,7 @@
 		parentTable += '<tr> ';
 		
 		// Header
-		parentTable += '<td colspan="4" class="bar"> ';
+		parentTable += '<td colspan="3" class="bar"> ';
 		parentTable += '</div> ';
 		parentTable += '</td> ';
 		parentTable += '</tr> ';
@@ -1002,7 +1002,7 @@
 		
 		// Footer & placeholder for moving ion table
 		parentTable += '<tr> ';
-		parentTable += '<td colspan="5" class="bar noprint" valign="top" align="center" id="ionTableLoc2" > ';
+		parentTable += '<td colspan="3" class="bar noprint" valign="top" align="center" id="ionTableLoc2" > ';
 		parentTable += '<div align="center" style="width:100%;font-size:10pt;"> ';
 		parentTable += '</div> ';
 		parentTable += '</td> ';
