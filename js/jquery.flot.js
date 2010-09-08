@@ -1758,7 +1758,7 @@
                     	drawPeak(lastx_coord, lasty1_coord, lasty2_coord);
                     }
                 }
-                console.log("# peaks drawn: "+l);
+                //console.log("# peaks drawn: "+l);
             }
         	
         	function drawPeak(x_coord, y1_coord, y2_coord) {

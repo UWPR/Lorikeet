@@ -232,10 +232,31 @@
 		// zoom out icon on plot right hand corner
 		if(zoomrange) {
 			placeholder.append('<div id="ms1plot_zoom_out" class="zoom_out_link"  style="position:absolute; left:'
-					+ (o.left + ms1plot.width() - 20) + 'px;top:' + (o.top+4) + 'px;"></div>');
+					+ (o.left + ms1plot.width() - 40) + 'px;top:' + (o.top+4) + 'px;"></div>');
 			$("#ms1plot_zoom_out").click( function() {
 				ms1zoomRange = null;
 				createMs1Plot();
+			});
+		}
+		
+		if(options.precursorPeaks) {
+			placeholder.append('<div id="ms1plot_zoom_in" class="zoom_in_link"  style="position:absolute; left:'
+					+ (o.left + ms1plot.width() - 20) + 'px;top:' + (o.top+4) + 'px;"></div>');
+			$("#ms1plot_zoom_in").click( function() {
+				var ranges = {};
+				ranges.yaxis = {};
+				ranges.xaxis = {};
+				ranges.yaxis.from = null;
+				ranges.yaxis.to = null;
+				ranges.xaxis.from = null;
+				ranges.xaxis.to = null;
+				var maxInt = 0;
+				for(var p = 0; p < options.precursorPeaks.length; p += 1) {
+					if(options.precursorPeaks[p][1] > maxInt)
+						maxInt = options.precursorPeaks[p][1];
+				}
+				ranges.yaxis.to = maxInt;
+				createMs1Plot(ranges);
 			});
 		}
 		
@@ -513,6 +534,10 @@
 			container.find('#ionTableLoc2').removeClass('noprint');
 			container.find('#viewOptionsDiv').removeClass('noprint');
 			$("#tempPrintDiv").siblings().removeClass("noprint");
+			
+			
+			plotOptions.series.peaks.print = false; // draw the labels in the canvas
+			plotAccordingToChoices();
 			
 			// move the plots back to the original location
 			$("#lorikeet").append($("#lorikeet_content").detach());
@@ -919,7 +944,7 @@
 	// -----------------------------------------------
 	function initContainer(div, options) {
 		
-		var rowspan = options.ms1peaks ? 3 : 2;
+		var rowspan = options.ms1peaks ? 2 : 1;
 		
 		div.append('<div id="lorikeet_content"></div>');
 		container = $("#lorikeet_content");
@@ -961,22 +986,18 @@
 		
 		// placeholders for the ms/ms plot
 		parentTable += '<tr> ';
-		parentTable += '<td id="msmsplot_td" style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> '; 
+		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> '; 
 		parentTable += '<div id="msmsplot" align="bottom" style="width:'+options.width+'px;height:'+options.height+'px;"></div> ';
 		
 		// placeholder for viewing options (zoom, plot size etc.)
 		parentTable += '<div id="viewOptionsDiv" align="top" style="margin-top:15px;"></div> ';
-		parentTable += '</td> ';
-		parentTable += '</tr> ';
 		
 		// placeholder for ms1 plot (if data is available)
 		if(options.ms1peaks && options.ms1peaks.length > 0) {
-			parentTable += '<tr> ';
-			parentTable += '<td id="msplot_td" style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> '; 
 			parentTable += '<div id="msplot" style="width:'+options.width+'px;height:100px;"></div> ';
-			parentTable += '</td> ';
-			parentTable += '</tr> ';
 		}
+		parentTable += '</td> ';
+		parentTable += '</tr> ';
 		
 		
 		// Footer & placeholder for moving ion table
