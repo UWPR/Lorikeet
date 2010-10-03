@@ -64,6 +64,7 @@
 				showModInfo();
 				
 				massError = options.massError;
+				maxInt = getMaxInt();
 				
 				createPlot(getDatasets()); // Initial MS/MS Plot
 				if(options.ms1peaks && options.ms1peaks.length > 0) {
@@ -103,6 +104,7 @@
 	var peakAssignmentTypeChanged = false;
 	var peakLabelTypeChanged = false;
 	var selectedNeutralLossChanged = false;
+	var maxInt;
 	
 	var plotOptions = {
     	series: {
@@ -117,7 +119,8 @@
         		borderWidth: 1,
         		labelMargin: 1},
         xaxis: { tickLength: 3, tickColor: "#000" },
-    	yaxis: { tickLength: 3, tickColor: "#000" }
+    	yaxis: { tickLength: 0, tickColor: "#000",
+        		tickFormatter: function(val, axis) {return Math.round((val * 100)/maxInt)+"%";}}
 	};
 	
 	var plot;					// MS/MS plot
@@ -130,6 +133,18 @@
 	var ionSeriesMatch = {a: [], b: [], c: [], x: [], y: [], z: []};
 	var ionSeriesLabels = {a: [], b: [], c: [], x: [], y: [], z: []};
 	
+	
+	function getMaxInt() {
+		var maxInt = 0;
+		for(var j = 0; j < options.peaks.length; j += 1) {
+			var peak = options.peaks[j];
+			if(peak[1] > maxInt) {
+				maxInt = peak[1];
+			}
+		}
+		//alert(maxInt);
+		return maxInt;
+	}
 	
 	function round(number) {
 		return number.toFixed(4);
