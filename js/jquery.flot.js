@@ -100,7 +100,7 @@
                     },
                     peaks: {
                         lineWidth: 1, // in pixels
-                        print: false,
+                        print: false
                     },
                     bars: {
                         show: false,
