@@ -22,6 +22,16 @@ Other Dependencies:
 1. JQuery core library (tested with version 1.4.2)
 2. JQuery UI library (tested with version 1.8.4)
 
+A NOTE ABOUT Internet Explorer
+---------------------------------------
+The flot JQuery plugin makes use of the canvas element of HTML5.  This element is not 
+supported in the current versions of IE. It should be supported in IE9. 
+For the viewer to work on IE the ExplorerCanvas script has to be included in the page.
+This script brings the canvas functionality to IE. 
+
+    <!--[if IE]><script language="javascript" type="text/javascript" src="../js/excanvas.min.js"></script><![endif]-->
+
+
 
 Examples:
 ---------------------------------------
