@@ -1,1 +1,110 @@
-Please see example_use.html for an example of using the Lorikeet plugin in a html page. 
+Lorikeet Reference
+=====================================
+
+Lorikeet is a JQuery plugin to render MS/MS spectra annotated with fragment ions. 
+The spectrum is interactive with zoom capabilities, selection of fragment types,
+switching annotations on and off etc. The plugin can, optionally, also render a MS1 
+spectrum below the MS/MS spectrum, with options to highlight the precursor peak 
+for the MS/MS scan, as well as any other precursor peaks.  
+
+
+Files required for the plugin to work:
+1. specview.js -- this file has the plugin's rendering functions
+2. aminoacid.js
+3. ion.js
+4. peptide.js
+5. jquery.flot.js -- this is a modified version of the flot (http://code.google.com/p/flot/) 
+                     plotting library for JQuery.  It is base off of subversion revision 263.
+6. jquery.flot.selection.js -- part of the flot package.  This is also from revision 263.
+
+
+Other Dependencies:
+1. JQuery core library (tested with version 1.4.2)
+2. JQuery UI library (tested with version 1.8.4)
+
+
+Examples:
+---------------------------------------
+Please see the following examples of using the Lorikeet plugin in a html page:
+1. example_use.html 	-- MS/MS spectrum only
+2. example_use2.html 	-- MS/MS and MS1 spectra
+
+
+Stylesheet:
+---------------------------------------
+The stylesheet lorikeet.css contains the necessary styling for the Lorikeet plugin.
+
+
+Usage:
+---------------------------------------
+The following fragment has to be included in the HTML file where the viewer should be
+displayed.  The id of the div can be any id that is unique on the page.
+	<div id="lorikeet"></div>
+
+The following fragment has to be included in a script element on the page.  This is 
+typically included in the window.onload function.  $("#lorikeet") is the JQuery way
+of referring to a DOM element with the id "lorikeet". 
+	$("#lorikeet").specview(options);
+	
+
+API Documentation:
+---------------------------------------
+Lorikeet has only a single method that renders the viewer! 
+
+    specview(options)
+
+    options is a set of key/value pairs that configure and provide data to the viewer.
+
+Options:
+	{
+	    "sequence": null,
+		"staticMods": [],
+		"variableMods": [],
+		"ntermMod": 0,
+		"ctermMod": 0,
+		"peaks": [],
+		"massError": 0.5, 
+		"scanNum": null,
+		"fileName": null,
+		"charge": null,
+		"precursorMz": null,
+		"ms1peaks": null,
+		"ms1scanLabel": null,
+		"precursorPeaks": null,
+		"precursorPeakClickFn": null,
+		"zoomMs1": false,
+		"width": 750, 	  // width of the ms/ms plot
+		"height": 450 	  // height of the ms/ms plot
+    }
+    
+    The required options(key/value pairs) are:
+    ------------------------------------------
+    1. sequence: the sequence of the peptide
+    2. peaks: an array of peaks in the MS/MS scan.  
+              Example: [ [602.17,209860.34], [691.67,33731.58],[871.42,236841.11],[888.50,1005389.56] ]
+    
+    Other options (not required):
+    ----------------------------
+    1. charge: The charge of the precursor. This information is displayed at the top of the scan.
+    2. precursorMz: The m/z of the precursor. This information is displayed at the top of the scan.
+                    This value is required for labeling the precursor peak in the MS1 scan if 
+                    it is rendered. 
+    3. scanNum:  The scan number of the MS/MS scan. This information is displayed at the top of the scan.
+    4. fileName: Name of the file that contains the MS/MS scan. This information is displayed at the top of the scan.
+    5. staticMods: An array of static modifications. Each modification is a set of key/value pairs.
+                   Example: [{"modMass":57.0,"aminoAcid":"C"}];
+    4. variableMods: An array of variable modifications. Each modification is a set of key/value pairs.
+                   Example: [ {index: 14, modMass: 16.0, aminoAcid: 'M'} ] // index is the index (1-based) 
+                                                                           // of the modification in the sequence.
+    5. ntermMod: mass to be added to the N-terminus.
+    6. ctermMod: mass to be added to the C-terminus.  
+    7. massError: mass tolerance used for labeling peaks in the MS/MS scan.                                                                         
+    8. ms1Peaks:  peaks in the MS1 scan. Format is the same as the "peaks" option.
+    9. precursorPeaks:  Any precursor peaks in the MS1 scan that will be highlighted. 
+                        Same format is the same as the "peaks" option.
+    10. zoomMs1: If the value is "true" the MS1 scan, upon initialization, is zoomed around the peak 
+                 that is the closest match to the "precursorMz" option. Default is "false".  
+    11. ms1scanLabel: Label for the MS1 scan.
+    12. precursorPeakClickFn: This is the function that will be called when a precursor peak is clicked.
+    13. width: width of the MS/MS plot area. Default is 750.
+    14. height: height of the MS/MS plot area. Default is 450.                                                                

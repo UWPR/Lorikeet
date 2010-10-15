@@ -17,7 +17,7 @@
 					ctermMod: 0,
 					peaks: [],
 					ms1peaks: null,
-					ms1scan: null,
+					ms1scanLabel: null,
 					precursorPeaks: null,
 					precursorPeakClickFn: null,
 					zoomMs1: false,
@@ -240,8 +240,8 @@
 		
 		// mark the scan number if we have it
 		o = ms1plot.getPlotOffset();
-		if(options.ms1scan) {
-			placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top+4) + 'px;color:#666;font-size:smaller">MS1 scan: '+options.ms1scan+'</div>');
+		if(options.ms1scanLabel) {
+			placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top+4) + 'px;color:#666;font-size:smaller">MS1 scan: '+options.ms1scanLabel+'</div>');
 		}
 		
 		// zoom out icon on plot right hand corner
@@ -963,7 +963,7 @@
 		
 		div.append('<div id="lorikeet_content"></div>');
 		container = $("#lorikeet_content");
-		container.addClass("mainContainer");
+		container.addClass("lorikeet");
 		
 		var parentTable = '<table cellpadding="0" cellspacing="5"> ';
 		parentTable += '<tbody> ';
