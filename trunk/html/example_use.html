@@ -41,14 +41,15 @@ $(document).ready(function () {
 								variableMods: varMods, 
 								ntermMod: ntermMod, 
 								//ctermMod: ctermMod,
-								peaks: peaks});	
+								peaks: peaks
+								});	
 
 });
 
 
 var sequence = "FDSFGDLSSASAIMGNPK";
 var varMods = [];
-// modification index = 14; modification mass = 16.0; modified residue = AminoAcid.M
+// modification index = 14; modification mass = 16.0; modified residue = 'M'
 varMods[0] = {index: 14, modMass: 16.0, aminoAcid: 'M'};
 // mass to be added to the N-terminus
 var ntermMod = 164.07;

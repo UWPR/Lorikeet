@@ -4,89 +4,50 @@
     }
 }
 
-
-BODY    {
-   background-color: #FFFFFF;
-   color: #000000;
-   height: 100%;
-   margin: 0;
-   padding: 0;
-   font-family: "Trebuchet MS",Arial,sans-serif;
-   font-size: 10pt;
-   font-style: normal;
-   font-weight: 500;
-}
-
-div.mainContainer {
+div.lorikeet {
 	width:100%; 
+	background-color: #FFFFFF;
+	color: #000000;
+	font-family: "Trebuchet MS",Arial,sans-serif;
+	font-size: 10pt;
+    font-style: normal;
+    margin: 0;
+    padding: 0;
 }
 
-div.mainContainer div.bar {
+div.lorikeet div.bar {
 	background-color:#F5F5DC;
     color:black; 
 }
-div.mainContainer td {
+div.lorikeet td {
 	background-color:#FFFFEF; 
 	border:1px solid black;
 	padding: 5px;
 }
       
-div.mainContainer td.optionCell {
+div.lorikeet td.optionCell {
 	background-color: white; 
 	border: 1px dotted #666666; 
 	padding: 5px;
 	margin:5px;
 }
-      
-div.mainContainer #ionTable {
-    border-collapse:collapse;
-	border-color:#DDDDDD;
-}
-div.mainContainer #ionTable th {
-	background-color:#BDB76B;
-	border: 1px solid #666666;
-}
-div.mainContainer #ionTable td {
-	border: 1px solid #666666;
-	text-align: center;
-	background-color:#FFFFFF;
-	font-size: 8pt;
-}
-div.mainContainer #ionTable td.seq {
-	font-weight: bold;
-	background-color:#BDB76B;
-}
-div.mainContainer #ionTable td.modified{
-	background-color:gold;
-}
-div.mainContainer #ionTable td.numCell {
-	background-color:#F5F5DC;
-	color:#777777;
-}
-div.mainContainer #ionTable td.matchIon {
-	font-weight:bold;
-	opacity:0.8;
-	filter: alpha(opacity=80); /*For IE*/
-	-moz-opacity:0.8; /*Old Mozilla browsers*/
-	color:white;
-}
-      
-div.mainContainer .link {
+
+div.lorikeet .link {
 	text-decoration: underline;
 	cursor:pointer;
 	color:sienna;
 }
-div.mainContainer .font_small {
+div.lorikeet .font_small {
 	font-size: 8pt;
 }
-div.mainContainer .zoom_out_link {
+div.lorikeet .zoom_out_link {
 	background-image: url('../images/lorikeet/zoom_out.png');
 	background-repeat: no-repeat;
 	width:20px;
 	height:20px;
 	cursor:pointer;
 }
-div.mainContainer .zoom_in_link {
+div.lorikeet .zoom_in_link {
 	background-image: url('../images/lorikeet/zoom_in.png');
 	background-repeat: no-repeat;
 	width:20px;
@@ -94,7 +55,57 @@ div.mainContainer .zoom_in_link {
 	cursor:pointer;
 }
 
-      /*
+
+/* THE FOLLOWING STYLES ARE FOR THE TABLE DISPLAYING THE SEQUENCE AND FRAGMENT ION MASS */
+div.lorikeet #ionTable {
+    border-collapse:collapse;
+	border-color:#DDDDDD;
+}
+div.lorikeet #ionTable th {
+	background-color:#BDB76B;
+	border: 1px solid #666666;
+}
+div.lorikeet #ionTable td {
+	border: 1px solid #666666;
+	text-align: center;
+	background-color:#FFFFFF;
+	font-size: 8pt;
+}
+
+/* style for a cell containing a residue from the sequence */
+div.lorikeet #ionTable td.seq {
+	font-weight: bold;
+	background-color:#BDB76B;
+}
+
+/* style for cell containing a modified residue */
+div.lorikeet #ionTable td.modified{
+	background-color:gold;
+}
+
+/* style for cell containing the fragment indices */
+div.lorikeet #ionTable td.numCell {
+	background-color:#F5F5DC;
+	color:#777777;
+}
+
+
+/* style for cell containing a fragment m/z that matches a peak in the scan */
+div.lorikeet #ionTable td.matchIon {
+	font-weight:bold;
+	opacity:0.8;
+	filter: alpha(opacity=80); /*For IE*/
+	-moz-opacity:0.8; /*Old Mozilla browsers*/
+	color:white;
+}
+      
+
+
+/*
+ * THE FOLLOWING STYLES ARE FOR THE SLIDERS CONTROLLING THE PLOT SIZE
+ */
+ 
+/*
  * jQuery UI Slider @VERSION
  *
  * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)

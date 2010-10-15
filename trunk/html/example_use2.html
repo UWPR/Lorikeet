@@ -39,12 +39,12 @@ $(document).ready(function () {
 								"fileName":fileName,
 								"staticMods":staticMods, 
 								"variableMods":variableMods,
-								ms1peaks: ms1peaks,
-								"ms1scan":ms1scan,
+								"ms1peaks": ms1peaks,
+								"ms1scanLabel":ms1scanLabel,
 								"precursorPeaks": precursorPeaks,
 								"zoomMs1": zoomMs1,
-								precursorPeakClickFn: precursorPeakClicked,
-								peaks: ms2peaks});	
+								"precursorPeakClickFn": precursorPeakClicked,
+								"peaks": ms2peaks});	
 
 });
 
@@ -61,7 +61,7 @@ var fileName = "22July09-FASP-1-02";
 var precursorMz = 917.849975586;
 var staticMods = [{"modMass":57.0,"aminoAcid":"C"}];
 var zoomMs1 = "true";
-var ms1scan = "36571 RT: 4900.87000";
+var ms1scanLabel = "36571 RT: 4900.87000";
 
 var precursorPeaks = [[602.1702270507812,209860.34],
 [691.6718139648438,33731.582],
