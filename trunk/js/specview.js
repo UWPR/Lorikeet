@@ -23,7 +23,8 @@
 					zoomMs1: false,
 					width: 750, 	// width of the ms/ms plot
 					height: 450, 	// height of the ms/ms plot
-					massError: 0.5 // mass tolerance for labeling peaks
+					massError: 0.5, // mass tolerance for labeling peaks
+					extraPeakSeries:[]
 			};
 		
 			var opts = $.extend(defaults, opts);
@@ -586,11 +587,19 @@
 		var selectedIonTypes = getSelectedIonTypes();
 		
 		calculateTheoreticalSeries(selectedIonTypes);
+		
+		// add the un-annotated peaks
 		var data = [{data: options.peaks, color: "#bbbbbb", labelType: 'none'}];
 		
+		// add the annotated peaks
 		var seriesMatches = getSeriesMatches(selectedIonTypes);
 		for(var i = 0; i < seriesMatches.length; i += 1) {
 			data.push(seriesMatches[i]);
+		}
+		
+		// add any user specified extra peaks
+		for(var i = 0; i < options.extraPeakSeries.length; i += 1) {
+			data.push(options.extraPeakSeries[i]);
 		}
 		return data;
 	}
