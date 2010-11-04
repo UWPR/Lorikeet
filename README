@@ -84,7 +84,8 @@ Options:
 		"precursorPeakClickFn": null,
 		"zoomMs1": false,
 		"width": 750, 	  // width of the ms/ms plot
-		"height": 450 	  // height of the ms/ms plot
+		"height": 450, 	  // height of the ms/ms plot
+		"extraPeakSeries": []
     }
     
     The required options(key/value pairs) are:
@@ -117,4 +118,10 @@ Options:
     11. ms1scanLabel: Label for the MS1 scan.
     12. precursorPeakClickFn: This is the function that will be called when a precursor peak is clicked.
     13. width: width of the MS/MS plot area. Default is 750.
-    14. height: height of the MS/MS plot area. Default is 450.                                                                
+    14. height: height of the MS/MS plot area. Default is 450. 
+    15. extraPeakSeries: An array of user defined peak series.  Each series should be a set of key value pairs.
+                  Example: {data: [[10.0,2.0],[20.0,3.0]], color: "#00aa00",labelType: 'mz',labels: ['one','two']}
+                  		   "labelType" should not be used if custom labels are provided as value to the "labels" key.
+                           If "labelType" is 'mz', custom labels are ignored.
+}
+                                                                                        

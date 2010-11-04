@@ -1779,16 +1779,16 @@
             		
             		if(drawLabel) {
                 		var label = '';
-                		if(series.labelType == 'ion') {
+                		
+                		if(series.labelType == 'mz') {
+                			var label = x.toFixed(2);
+                		}
+                		else  {
 		                	if(series.labels) {
 		                		//alert(myx1+", "+myx2);
 		                		label = series.labels[l];
 		                	}
                 		}
-                		else if(series.labelType == 'mz') {
-                			var label = x.toFixed(2);
-                		}
-                		
                 		if(series.peaks.print) {
                 			// appending a div is too slow
                 			o = plot.getPlotOffset();
