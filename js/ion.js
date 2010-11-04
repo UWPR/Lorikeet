@@ -205,12 +205,12 @@ function Ion_Y (sequence, startIdx, charge, massType) {
 
 function Ion_Z (sequence, startIdx, charge, massType) {
 	// Neutral mass = [C]+[M]-NH2 ; C = mass of neutral C-terminal group (OH)
-	// After comparing with TPP's Comet Spectrum View added one proton
+	// We're really printing Z-dot ions so we add an H to make it OH+[M]-NH2 +H = [M]+O-N
 	var mass = 0;
 	if(massType == "mono")
-		mass = Peptide.getSeqMassMono(sequence, startIdx, "c") + MASS_O - (MASS_N + MASS_H) + MASS_PROTON;
+		mass = Peptide.getSeqMassMono(sequence, startIdx, "c") + MASS_O - MASS_N;
 	else if(massType == "avg")
-		mass = Peptide.getSeqMassAvg(sequence, startIdx, "c") + MASS_O - (MASS_N + MASS_H) + MASS_PROTON;
+		mass = Peptide.getSeqMassAvg(sequence, startIdx, "c") + MASS_O - MASS_N;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("z", sequence.length - startIdx, charge);
