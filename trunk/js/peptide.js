@@ -86,10 +86,21 @@ function _addModMasses(seqMass, seq, index, term) {
 		mass += Peptide.ctermMod;
 
 	// add any static modifications
-	for(var i = 0; i < seq.length; i += 1) {
-		var mod = Peptide.staticMods[seq[i]];
-		if(mod)
-			mass += mod.modMass;
+	if(term == "n") {
+		for(var i = 0; i < index; i += 1) {
+			var mod = Peptide.staticMods[seq[i]];
+			if(mod) {
+				mass += mod.modMass;
+			}
+		}
+	}
+	if(term == "c") {
+		for(var i = index; i < seq.length; i += 1) {
+			var mod = Peptide.staticMods[seq[i]];
+			if(mod) {
+				mass += mod.modMass;
+			}
+		}
 	}
 	
 	// add any varible modifications
