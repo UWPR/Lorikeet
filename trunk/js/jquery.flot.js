@@ -1678,7 +1678,7 @@
         		
                 var incr = ps;
                 
-                var l = -1;
+                var l = -1; // peak label index
                 
                 var lastx_coord, lasty1_coord, lasty2_coord, lasty;
                 
@@ -1690,6 +1690,8 @@
                     if (x == null)
                         continue;
 
+                    l += 1; // peak label index
+                    
                     // clip with xmin
                     if (x < axisx.min) {
                         continue;
@@ -1730,13 +1732,11 @@
                     // If we have a label associated with the peaks we will draw them all
                     // otherwise we will draw the most intense peak at every pixel to reduce drawing time
                     if(series.labelType != 'none') {
-                    	l += 1;
 	                	drawPeak(myx, myy1, myy2);
 	                	drawLabel(myx, myy2, x, y2, axisx, axisy, l);
                     }
                     else {
                     	if(lastx_coord && lastx_coord < myx) {
-                    		l += 1;
 	                    	// draw the most intense peak at the last coordinate
 	                    	drawPeak(lastx_coord, lasty1_coord, lasty2_coord);
 	                    	lasty = -1;
@@ -1753,7 +1753,6 @@
                 // draw the last peak if we are only drawing most intense peaks at each pixel
                 if(series.labelType == 'none') {
                 	if(lastx_coord) {
-                		l += 1;
                     	// draw the most intense peak at the last coordinate
                     	drawPeak(lastx_coord, lasty1_coord, lasty2_coord);
                     }
