@@ -58,7 +58,10 @@
 										options.ntermMod, options.ctermMod);
 				
 				container = initContainer($(this), options);
-				makeOptionsTable();
+				if(options.charge)
+					makeOptionsTable(options.charge);
+				else
+					makeOptionsTable(1);
 				makeViewingOptions();
 				showSequenceInfo();
 				showFileInfo();
@@ -1319,8 +1322,9 @@
 	//---------------------------------------------------------
 	// OPTIONS TABLE
 	//---------------------------------------------------------
-	function makeOptionsTable() {
+	function makeOptionsTable(charge) {
 		
+		//console.log("Given charge: "+charge);
 		var myTable = '';
 		myTable += '<table cellpadding="2" cellspacing="2"> ';
 		myTable += '<tbody> ';
@@ -1342,8 +1346,14 @@
 		myTable += '<nobr> ';
 		myTable += '<b>b</b> ';
 		myTable += '<input type="checkbox" value="1" id="b_1" checked="checked"/>1<sup>+</sup> ';
-		myTable += '<input type="checkbox" value="2" id="b_2"/>2<sup>+</sup> ';
-		myTable += '<input type="checkbox" value="3" id="b_3"/>3<sup>+</sup> ';
+		if(charge >= 2)
+			myTable += '<input type="checkbox" value="2" id="b_2" checked="checked"/>2<sup>+</sup> ';
+		else
+			myTable += '<input type="checkbox" value="2" id="b_2"/>2<sup>+</sup> ';
+		if(charge >= 3)
+			myTable += '<input type="checkbox" value="3" id="b_3" checked="checked"/>3<sup>+</sup> ';
+		else
+			myTable += '<input type="checkbox" value="3" id="b_3"/>3<sup>+</sup> ';
 		myTable += '</nobr> ';
 		myTable += '<br/> ';
 		myTable += '<!-- c ions --> ';
@@ -1366,8 +1376,14 @@
 		myTable += '<nobr> ';
 		myTable += '<b>y</b> ';
 		myTable += '<input type="checkbox" value="1" id="y_1" checked="checked"/>1<sup>+</sup> ';
-		myTable += '<input type="checkbox" value="2" id="y_2"/>2<sup>+</sup> ';
-		myTable += '<input type="checkbox" value="3" id="y_3"/>3<sup>+</sup> ';
+		if(charge >= 2)
+			myTable += '<input type="checkbox" value="2" id="y_2" checked="checked"/>2<sup>+</sup> ';
+		else 
+			myTable += '<input type="checkbox" value="2" id="y_2"/>2<sup>+</sup> ';
+		if(charge >= 3)
+			myTable += '<input type="checkbox" value="3" id="y_3" checked="checked"/>3<sup>+</sup> ';
+		else
+			myTable += '<input type="checkbox" value="3" id="y_3"/>3<sup>+</sup> ';
 		myTable += '</nobr> ';
 		myTable += '<br/> ';
 		myTable += '<!-- z ions --> ';
