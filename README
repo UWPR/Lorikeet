@@ -70,8 +70,8 @@ Options:
 	    "sequence": null,
 		"staticMods": [],
 		"variableMods": [],
-		"ntermMod": 0,
-		"ctermMod": 0,
+		"ntermMod": 0, // additional mass to be added to the n-term
+		"ctermMod": 0, // additional mass to be added to the c-term
 		"peaks": [],
 		"massError": 0.5, 
 		"scanNum": null,
@@ -107,8 +107,8 @@ Options:
     4. variableMods: An array of variable modifications. Each modification is a set of key/value pairs.
                    Example: [ {index: 14, modMass: 16.0, aminoAcid: 'M'} ] // index is the index (1-based) 
                                                                            // of the modification in the sequence.
-    5. ntermMod: mass to be added to the N-terminus.
-    6. ctermMod: mass to be added to the C-terminus.  
+    5. ntermMod: additional mass to be added to the N-terminus.
+    6. ctermMod: additional mass to be added to the C-terminus.  
     7. massError: mass tolerance used for labeling peaks in the MS/MS scan.                                                                         
     8. ms1Peaks:  peaks in the MS1 scan. Format is the same as the "peaks" option.
     9. precursorPeaks:  Any precursor peaks in the MS1 scan that will be highlighted. 
