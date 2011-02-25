@@ -75,10 +75,16 @@ Ion.getSeriesColor = function _getSeriesColor(ion) {
 //-----------------------------------------------------------------------------
 // Ion Series
 //-----------------------------------------------------------------------------
-var MASS_H = 1.00794;
-var MASS_C = 12.011;
-var MASS_N = 14.00674;
-var MASS_O = 15.9994;
+var MASS_H_1 = 1.00782503207;  	// H(1)  Source: http://en.wikipedia.org/wiki/Isotopes_of_hydrogen
+var MASS_C_12 = 12.0;           // C(12) Source: http://en.wikipedia.org/wiki/Isotopes_of_carbon
+var MASS_N_14 = 14.0030740048;  // N(14) Source: http://en.wikipedia.org/wiki/Isotopes_of_nitrogen
+var MASS_O_16 = 15.99491461956; // O(16) Source: http://en.wikipedia.org/wiki/Isotopes_of_oxygen
+
+var MASS_H = 1.00782504; // Source: http://en.wikipedia.org/wiki/Isotopes_of_hydrogen
+var MASS_C = 12.0107;    // Source: http://en.wikipedia.org/wiki/Isotopes_of_carbon
+var MASS_N = 14.0067;	 // Source: http://en.wikipedia.org/wiki/Isotopes_of_nitrogen
+var MASS_O = 15.9994;	 // Source: http://en.wikipedia.org/wiki/Isotopes_of_oxygen
+
 var MASS_PROTON = 1.007276;
 
 Ion.MASS_PROTON = MASS_PROTON;
@@ -86,6 +92,10 @@ Ion.MASS_H = MASS_H;
 Ion.MASS_C = MASS_C;
 Ion.MASS_N = MASS_N;
 Ion.MASS_O = MASS_O;
+Ion.MASS_H_1 = MASS_H_1;
+Ion.MASS_C_12 = MASS_C_12;
+Ion.MASS_N_14 = MASS_N_14;
+Ion.MASS_O_16 = MASS_O_16;
 
 // massType can be "mono" or "avg"
 Ion.getSeriesIon = function _getSeriesIon(ion, sequence, idxInSeq, massType) {
@@ -132,7 +142,7 @@ function Ion_A (sequence, endIdxPlusOne, charge, massType) {
 	// Neutral mass:  	 [N]+[M]-CHO  ; N = mass of neutral N terminal group
 	var mass = 0;
 	if(massType == "mono")
-		mass = Peptide.getSeqMassMono(sequence, endIdxPlusOne, "n") - (MASS_C + MASS_O);
+		mass = Peptide.getSeqMassMono(sequence, endIdxPlusOne, "n") - (MASS_C_12 + MASS_O_16);
 	else if(massType == "avg")
 		mass = Peptide.getSeqMassAvg(sequence, endIdxPlusOne, "n") - (MASS_C + MASS_O);
 	this.charge = charge;
@@ -162,7 +172,7 @@ function Ion_C (sequence, endIdxPlusOne, charge, massType) {
 	// Neutral mass:    [N]+[M]+NH2  ; N = mass of neutral N terminal group
 	var mass = 0;
 	if(massType == "mono")
-		mass = Peptide.getSeqMassMono(sequence, endIdxPlusOne, "n") + MASS_H + (MASS_N + 2*MASS_H);
+		mass = Peptide.getSeqMassMono(sequence, endIdxPlusOne, "n") + MASS_H_1 + (MASS_N_14 + 2*MASS_H_1);
 	else if(massType == "avg")
 		mass = Peptide.getSeqMassAvg(sequence, endIdxPlusOne, "n") + MASS_H + (MASS_N + 2*MASS_H);
 	this.charge = charge;
@@ -177,7 +187,7 @@ function Ion_X (sequence, startIdx, charge, massType) {
 	// Neutral mass = [C]+[M]+CO-H ; C = mass of neutral C-terminal group (OH)
 	var mass = 0;
 	if(massType == "mono")
-		mass = Peptide.getSeqMassMono(sequence, startIdx, "c") + 2*MASS_O + MASS_C;
+		mass = Peptide.getSeqMassMono(sequence, startIdx, "c") + 2*MASS_O_16 + MASS_C_12;
 	else if(massType == "avg")
 		mass = Peptide.getSeqMassAvg(sequence, startIdx, "c") + 2*MASS_O + MASS_C;
 	this.charge = charge;
@@ -192,7 +202,7 @@ function Ion_Y (sequence, startIdx, charge, massType) {
 	// Neutral mass = [C]+[M]+H ; C = mass of neutral C-terminal group (OH)
 	var mass = 0;
 	if(massType == "mono")
-		mass = Peptide.getSeqMassMono(sequence, startIdx, "c") + 2*MASS_H + MASS_O;
+		mass = Peptide.getSeqMassMono(sequence, startIdx, "c") + 2*MASS_H_1 + MASS_O_16;
 	else if(massType == "avg")
 		mass = Peptide.getSeqMassAvg(sequence, startIdx, "c") + 2*MASS_H + MASS_O;
 	this.charge = charge;
@@ -208,7 +218,7 @@ function Ion_Z (sequence, startIdx, charge, massType) {
 	// We're really printing Z-dot ions so we add an H to make it OH+[M]-NH2 +H = [M]+O-N
 	var mass = 0;
 	if(massType == "mono")
-		mass = Peptide.getSeqMassMono(sequence, startIdx, "c") + MASS_O - MASS_N;
+		mass = Peptide.getSeqMassMono(sequence, startIdx, "c") + MASS_O_16 - MASS_N_14;
 	else if(massType == "avg")
 		mass = Peptide.getSeqMassAvg(sequence, startIdx, "c") + MASS_O - MASS_N;
 	this.charge = charge;

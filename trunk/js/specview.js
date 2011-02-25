@@ -13,8 +13,8 @@
 					precursorMz: null,
 					staticMods: [],
 					variableMods: [],
-					ntermMod: 0,
-					ctermMod: 0,
+					ntermMod: 0, // additional mass to be added to the n-term
+					ctermMod: 0, // additional mass to be added to the c-term 
 					peaks: [],
 					ms1peaks: null,
 					ms1scanLabel: null,
@@ -212,7 +212,7 @@
 			}
 			// Otherwise calculate a theoretical m/z from the given sequence and charge
 			else if(options.sequence && options.charge) {
-				var mass = Peptide.getSeqMassMono(options.sequence, options.sequence.length, "n") + Ion.MASS_O + Ion.MASS_H;
+				var mass = Peptide.getNeutralMassMono();
 				precursorMz = Ion.getMz(mass, options.charge);
 			}
 			
@@ -450,6 +450,7 @@
 		if (data.length > 0) {
             createPlot(data);
             makeIonTable();
+            showSequenceInfo(); // update the MH+ and m/z values
         }
     }
 	
@@ -880,7 +881,7 @@
 	}
 	
 	// sion -- theoretical ion
-	// matchData -- array to wich we will add a peak if there is a match
+	// matchData -- array to which we will add a peak if there is a match
 	// allPeaks -- array with all the scan peaks
 	// peakIndex -- current index in peaks array
 	// Returns the index of the matching peak, if one is found
@@ -1178,14 +1179,23 @@
 			
 			specinfo += '<div>';
 			specinfo += '<span style="font-weight:bold; color:#8B0000;">'+getModifiedSequence()+'</span>';
-			var mass = Peptide.getSeqMassMono(options.sequence, options.sequence.length, "n");
-			// add C-terminal OH
-			mass = mass + Ion.MASS_O + Ion.MASS_H;
+			
+			var massType = container.find("input[name='massTypeOpt']:checked").val();
+			
+			var neutralMass = 0;
+			
+			if(massType == "mono")
+				neutralMass = Peptide.getNeutralMassMono();
+			else if(massType == "avg")
+				neutralMass = Peptide.getNeutralMassAvg();
+				
+			
 			var mz;
 			if(options.charge) {
-				mz = Ion.getMz(mass, options.charge);
+				mz = Ion.getMz(neutralMass, options.charge);
 			}
-			mass = mass + Ion.MASS_PROTON;
+			
+			mass = neutralMass + Ion.MASS_PROTON;
 			specinfo += ', MH+ '+mass.toFixed(4);
 			if(mz) 
 				specinfo += ', m/z '+mz.toFixed(4);
@@ -1193,6 +1203,8 @@
 			
 		}
 		
+		// first clear the div if it has anything
+		container.find("#seqinfo").empty();
 		container.find("#seqinfo").append(specinfo);
 	}
 	
