@@ -58,8 +58,9 @@
 										options.ntermMod, options.ctermMod);
 				
 				container = initContainer($(this), options);
-				if(options.charge)
-					makeOptionsTable(options.charge);
+				if(options.charge) {
+					makeOptionsTable(Math.max(1,options.charge-1));
+				}
 				else
 					makeOptionsTable(1);
 				makeViewingOptions();
