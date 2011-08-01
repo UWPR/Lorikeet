@@ -1,0 +1,17 @@
+- Option to label masses of unassigned peaks.
+
+- Graphical mark for the precursor on the ms/ms plot.  A special tick mark under axis if possible otherwise mark in the plot itself.
+
+- Ability to mark both experimental m/z and the calculated m/z in the MS1 plot and know which one is which (using separate colors or symbols).
+
+- Implementing some dynamic threshold for peak labeling that is dependent on complexity of spectrum in current view (such as percentage of base peak).  Allowing this threshold to be changeable with a slider would be nice.
+
+- Highlight ETD CRP peaks.  Logic can happen in tool feeding data to the viewer or in viewer itself.  This would entail either passing an ETD true boolean tag and have viewer calculate the CRPs or we can pass it a list of the CRPs.
+
+- Precursor neutral loss markings.  Besides phosphate loss (big -98/49 peaks) for phosphorylated spectrum, I'm not sure what else to highlight.
+
+- A panning mode to drag spectrum left/right.  Nice to have a toggle between the click-drag-zoom versus pan.
+
+- A fragment ion m/z delta/error plot.
+
+- Place peptide sequence in the form and allow it to be editable for alternate peptide interpretations.
