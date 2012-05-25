@@ -41,13 +41,13 @@ Peptide.getSeqMassMono = function _seqMassMono(seq, index, term) {
 	if(seq) {
 		if(term == "n") {
 			for( var i = 0; i < index; i += 1) {
-				var aa = aa_obj.get(seq[i]);
+				var aa = aa_obj.get(seq.charAt(i));
 				mass += aa.mono;
 			}
 		}
 		if (term == "c") {
 			for( var i = index; i < seq.length; i += 1) {
-				var aa = aa_obj.get(seq[i]);
+				var aa = aa_obj.get(seq.charAt(i));
 				mass += aa.mono;
 			}
 		}
@@ -93,7 +93,7 @@ Peptide.getNeutralMassMono = function _massNeutralMono() {
 	var aa_obj = new AminoAcid();
 	if(Peptide.sequence) {
 		for(var i = 0; i < Peptide.sequence.length; i++) {
-			var aa = aa_obj.get(Peptide.sequence[i]);
+			var aa = aa_obj.get(Peptide.sequence.charAt(i));
 			mass += aa.mono;
 		}
 	}
@@ -116,7 +116,7 @@ Peptide.getNeutralMassAvg = function _massNeutralAvg() {
 	var aa_obj = new AminoAcid();
 	if(Peptide.sequence) {
 		for(var i = 0; i < Peptide.sequence.length; i++) {
-			var aa = aa_obj.get(Peptide.sequence[i]);
+			var aa = aa_obj.get(Peptide.sequence.charAt(i));
 			mass += aa.avg;
 		}
 	}
@@ -140,7 +140,7 @@ function _addResidueModMasses(seqMass, seq, index, term) {
 	// add any static modifications
 	if(term == "n") {
 		for(var i = 0; i < index; i += 1) {
-			var mod = Peptide.staticMods[seq[i]];
+			var mod = Peptide.staticMods[seq.charAt(i)];
 			if(mod) {
 				mass += mod.modMass;
 			}
@@ -148,7 +148,7 @@ function _addResidueModMasses(seqMass, seq, index, term) {
 	}
 	if(term == "c") {
 		for(var i = index; i < seq.length; i += 1) {
-			var mod = Peptide.staticMods[seq[i]];
+			var mod = Peptide.staticMods[seq.charAt(i)];
 			if(mod) {
 				mass += mod.modMass;
 			}

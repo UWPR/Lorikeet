@@ -1099,6 +1099,7 @@
 		
 		myTable +=  "<tbody>" ;
 		for(var i = 0; i < options.sequence.length; i += 1) {
+            var aaChar = options.sequence.charAt(i);
 			myTable +=   "<tr>";
 			
 			// nterm ions
@@ -1120,9 +1121,9 @@
 			
 			myTable += "<td class='numCell'>"+(i+1)+"</td>";
 			if(Peptide.varMods[i+1])
-				myTable += "<td class='seq modified'>"+options.sequence[i]+"</td>";
+				myTable += "<td class='seq modified'>"+aaChar+"</td>";
 			else
-				myTable += "<td class='seq'>"+options.sequence[i]+"</td>";
+				myTable += "<td class='seq'>"+aaChar+"</td>";
 			myTable += "<td class='numCell'>"+(options.sequence.length - i)+"</td>";
 			
 			// cterm ions
@@ -1215,9 +1216,9 @@
 		for(var i = 0; i < options.sequence.length; i += 1) {
 			
 			if(Peptide.varMods[i+1])
-				modSeq += '<span style="background-color:yellow;padding:1px;border:1px dotted #CFCFCF;">'+options.sequence[i]+"</span>";
+				modSeq += '<span style="background-color:yellow;padding:1px;border:1px dotted #CFCFCF;">'+options.sequence.charAt(i)+"</span>";
 			else
-				modSeq += options.sequence[i];
+				modSeq += options.sequence.charAt(i);
 		}
 		
 		return modSeq;
