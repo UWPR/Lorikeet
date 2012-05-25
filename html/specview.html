@@ -387,8 +387,12 @@ function createSpectrum() {
 	var peaksStr = $("#peaks").val();
 	var peaksArr = peaksStr.split("\n");
 	for(var i = 0; i < peaksArr.length;	 i += 1) {
-		
-		var peakVals= peaksArr[i].split(/\s+/);
+	
+		var val = $.trim(peaksArr[i]);
+		if(val.length == 0) // skip over empty lines
+			continue;
+			
+		var peakVals = val.split(/\s+/);
 		if(peakVals.length != 2) {
 			alert("Invalid peak data: "+peakVals);
 			return false;
