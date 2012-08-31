@@ -4,7 +4,7 @@
 		
 		// plugin name - specview
 		specview: function(opts) {
-			
+
 			var defaults = {
 					sequence: null,
 					scanNum: null,
@@ -24,15 +24,23 @@
 					width: 750, 	// width of the ms/ms plot
 					height: 450, 	// height of the ms/ms plot
 					massError: 0.5, // mass tolerance for labeling peaks
-					extraPeakSeries:[]
+					extraPeakSeries:[],
+                    showIonTable: true,
+                    showViewingOptions: true
 			};
-		
-			var opts = $.extend(defaults, opts);
+			
+			options = $.extend(defaults, opts);
 			
 			return this.each(function() {
-				
-				options = opts;
-				
+
+                user_parent_div = $(this);
+                var elementId = $(this).attr('id');
+
+				for(var index in jquery_elem_accessor) {
+
+					jquery_elem_accessor[index] = "#"+elementId+" > #"+jquery_elem_accessor[index];
+				}
+
 				// read the static modifications
 				var parsedStaticMods = [];
 				for(var i = 0; i < options.staticMods.length; i += 1) {
@@ -40,7 +48,7 @@
 					parsedStaticMods[i] = new Modification(AminoAcid.get(mod.aminoAcid), mod.modMass);
 				}
 				options.staticMods = parsedStaticMods;
-				
+
 				// read the variable modifications
 				var parsedVarMods = [];
 				for(var i = 0; i < options.variableMods.length; i += 1) {
@@ -53,24 +61,26 @@
 										);
 				}
 				options.variableMods = parsedVarMods;
-				
+
 				var input = new Peptide(options.sequence, options.staticMods, options.variableMods,
 										options.ntermMod, options.ctermMod);
 				
 				container = initContainer($(this), options);
-				if(options.charge) {
-					makeOptionsTable(Math.max(1,options.charge-1));
-				}
-				else
-					makeOptionsTable(1);
-				makeViewingOptions();
-				showSequenceInfo();
+                if(options.charge) {
+                    makeOptionsTable(Math.max(1,options.charge-1), options.showIonTable);
+                }
+                else
+                    makeOptionsTable(1, options.showIonTable);
+
+                makeViewingOptions(options.showViewingOptions);
+
+                showSequenceInfo();
 				showFileInfo();
 				showModInfo();
-				
+
 				massError = options.massError;
 				maxInt = getMaxInt();
-				
+
 				createPlot(getDatasets()); // Initial MS/MS Plot
 				if(options.ms1peaks && options.ms1peaks.length > 0) {
 					if(options.zoomMs1 && options.precursorMz) {
@@ -94,13 +104,14 @@
 					setupMs1PlotInteractions();
 				}
 				setupInteractions();
-				
+
 				makeIonTable();
 			});
 		}
-	
+
 	});
 
+    var user_parent_div;
 	var container;
 	var options;
 	var massError;
@@ -110,35 +121,71 @@
 	var peakLabelTypeChanged = false;
 	var selectedNeutralLossChanged = false;
 	var maxInt;
-	
+
 	var plotOptions = {
     	series: {
             peaks: { show: true, lineWidth: 1, shadowSize: 0},
             shadowSize: 0
         },
         selection: { mode: "x", color: "#F0E68C" },
-        grid: { show: true, 
-        		hoverable: true, 
-        		clickable: false, 
-        		autoHighlight: false, 
+        grid: { show: true,
+        		hoverable: true,
+        		clickable: false,
+        		autoHighlight: false,
         		borderWidth: 1,
         		labelMargin: 1},
         xaxis: { tickLength: 3, tickColor: "#000" },
     	yaxis: { tickLength: 0, tickColor: "#000",
         		tickFormatter: function(val, axis) {return Math.round((val * 100)/maxInt)+"%";}}
 	};
-	
+
 	var plot;					// MS/MS plot
 	var ms1plot;				// MS1 plot (only created when data is available)
 	var zoomRange; 				// for zooming MS/MS plot
 	var ms1zoomRange;
 	var previousPoint = null; 	// for tooltips
-	
+
 	var ionSeries = {a: [], b: [], c: [], x:[], y: [], z: []};
 	var ionSeriesMatch = {a: [], b: [], c: [], x: [], y: [], z: []};
 	var ionSeriesLabels = {a: [], b: [], c: [], x: [], y: [], z: []};
-	
-	
+
+	var elementIds = {
+					massError: "massError",
+					msPlot: "msPlot",
+					msmsplot: "msmsplot",
+					ms1plot_zoom_out: "ms1plot_zoom_out",
+					ms1plot_zoom_in: "ms1plot_zoom_in",
+					ms2plot_zoom_out: "ms2plot_zoom_out",
+					zoom_x: "zoom_x",
+					zoom_y: "zoom_y",
+					resetZoom: "resetZoom",
+					update: "update",
+					enableTooltip: "enableTooltip",
+					msmstooltip: "lorikeet_msmstooltip",
+					ion_choice: "ion_choice",
+					nl_choice: "nl_choice",
+					deselectIonsLink: "deselectIonsLink",
+					slider_width: "slider_width",
+					slider_width_val: "slider_width_val",
+					slider_height: "slider_height",
+					slider_height_val: "slider_height_val",
+					printLink: "printLink",
+					lorikeet_content: "lorikeet_content",
+					// lorikeet: "lorikeet",
+					optionsTable: "optionsTable",
+					ionTableLoc1: "ionTableLoc1",
+					ionTableLoc2: "ionTableLoc2",
+					viewOptionsDiv: "viewOptionsDiv",
+					moveIonTable: "moveIonTable",
+                    modInfo: "modInfo",
+					ionTableDiv: "ionTableDiv",
+					ionTable: "ionTable",
+					fileinfo: "fileinfo",
+					seqinfo: "seqinfo"
+	};
+
+    var jquery_elem_accessor = $.extend({}, elementIds);
+
 	function getMaxInt() {
 		var maxInt = 0;
 		for(var j = 0; j < options.peaks.length; j += 1) {
@@ -156,7 +203,7 @@
 	}
 	
 	function setMassError() {
-   		var me = parseFloat(container.find("#massError").val());
+   		var me = parseFloat(container.find("#"+elementIds.massError).val());
 		if(me != massError) {
 			massError = me;
 			massErrorChanged = true;
@@ -199,10 +246,11 @@
 			ms1plotOptions.yaxis.min = zoomrange.yaxis.from;
 			ms1plotOptions.yaxis.max = zoomrange.yaxis.to;
 		}
-		
-		var placeholder = container.find("#msplot");
+
+		var placeholder = container.find("#"+elementIds.msPlot);
 		ms1plot = $.plot(placeholder, data, ms1plotOptions);
-		
+
+
 		// mark the current precursor peak
 		if(options.precursorPeaks) {
 			var x,y, diff, precursorMz;
@@ -251,18 +299,19 @@
 		
 		// zoom out icon on plot right hand corner
 		if(zoomrange) {
-			placeholder.append('<div id="ms1plot_zoom_out" class="zoom_out_link"  style="position:absolute; left:'
+			placeholder.append('<div id="'+elementIds.ms1plot_zoom_out+'" class="zoom_out_link"  style="position:absolute; left:'
 					+ (o.left + ms1plot.width() - 40) + 'px;top:' + (o.top+4) + 'px;"></div>');
-			$("#ms1plot_zoom_out").click( function() {
+
+			$(placeholder.find("#"+elementIds.ms1plot_zoom_out)).click( function() {
 				ms1zoomRange = null;
 				createMs1Plot();
 			});
 		}
 		
 		if(options.precursorPeaks) {
-			placeholder.append('<div id="ms1plot_zoom_in" class="zoom_in_link"  style="position:absolute; left:'
+			placeholder.append('<div id="'+elementIds.ms1plot_zoom_in+'" class="zoom_in_link"  style="position:absolute; left:'
 					+ (o.left + ms1plot.width() - 20) + 'px;top:' + (o.top+4) + 'px;"></div>');
-			$("#ms1plot_zoom_in").click( function() {
+			$(placeholder.find("#"+elementIds.ms1plot_zoom_in)).click( function() {
 				var ranges = {};
 				ranges.yaxis = {};
 				ranges.xaxis = {};
@@ -285,7 +334,7 @@
 	
 	function setupMs1PlotInteractions() {
 		
-		var placeholder = container.find("#msplot");
+		var placeholder = container.find("#"+elementIds.msPlot);
 		
 		
 		// allow clicking on plot if we have a function to handle the click
@@ -308,26 +357,27 @@
 	}
 	
 	function createPlot(datasets) {
-		
+
     	if(!zoomRange) {
-    		plot = $.plot(container.find("#msmsplot"), datasets,  plotOptions);
-    	}
+    		plot = $.plot(container.find("#"+elementIds.msmsplot), datasets,  plotOptions);
+        }
     	else {
-    		var selectOpts = {};
-    		if(container.find("#zoom_x").is(":checked"))
+            var selectOpts = {};
+    		if(container.find("#"+elementIds.zoom_x).is(":checked"))
     			selectOpts.xaxis = { min: zoomRange.xaxis.from, max: zoomRange.xaxis.to };
-    		if(container.find("#zoom_y").is(":checked"))
+    		if(container.find("#"+elementIds.zoom_y).is(":checked"))
     			selectOpts.yaxis = { min: zoomRange.yaxis.from, max: zoomRange.yaxis.to };
     		
-    		plot = $.plot(container.find("#msmsplot"), datasets,
+    		plot = $.plot(container.find("#"+elementIds.msmsplot), datasets,
                       $.extend(true, {}, plotOptions, selectOpts));
     		
     		// zoom out icon on plot right hand corner
     		var o = plot.getPlotOffset();
-    		container.find("#msmsplot").append('<div id="ms2plot_zoom_out" class="zoom_out_link" style="position:absolute; left:'
+    		container.find("#"+elementIds.msmsplot).append('<div id="'+elementIds.ms2plot_zoom_out+'" class="zoom_out_link" style="position:absolute; left:'
 					+ (o.left + plot.width() - 20) + 'px;top:' + (o.top+4) + 'px"></div>');
-			$("#ms2plot_zoom_out").click( function() {
-				resetZoom();
+
+			$(container.find("#"+elementIds.msmsplot).find("#"+elementIds.ms2plot_zoom_out)).click( function() {
+                resetZoom();
 			});
     	}
     	// we have re-calculated and re-drawn everything..
@@ -344,26 +394,26 @@
 	function setupInteractions () {
 		
 		// ZOOMING
-	    container.find("#msmsplot").bind("plotselected", function (event, ranges) {
+	    container.find("#"+elementIds.msmsplot).bind("plotselected", function (event, ranges) {
 	    	zoomRange = ranges;
 	    	createPlot(getDatasets());
 	    });
 	    
 	    // ZOOM AXES
-	    container.find("#zoom_x").click(function() {
+	    container.find("#"+elementIds.zoom_x).click(function() {
 	    	resetAxisZoom();
 	    });
-	    container.find("#zoom_y").click(function() {
+	    container.find("#"+elementIds.zoom_y).click(function() {
 	    	resetAxisZoom();
 	    });
 	    
 		// RESET ZOOM
-		container.find("#resetZoom").click(function() {
+		container.find("#"+elementIds.resetZoom).click(function() {
 			resetZoom();
 	   	});
 		
 		// UPDATE
-		container.find("#update").click(function() {
+		container.find("#"+elementIds.update).click(function() {
 			zoomRange = null; // zoom out fully
 			setMassError();
 			createPlot(getDatasets());
@@ -371,14 +421,14 @@
 	   	});
 		
 		// TOOLTIPS
-		container.find("#msmsplot").bind("plothover", function (event, pos, item) {
+		container.find("#"+elementIds.msmsplot).bind("plothover", function (event, pos, item) {
 
-	        if (container.find("#enableTooltip:checked").length > 0) {
+	        if (container.find("#"+elementIds.enableTooltip+":checked").length > 0) {
 	            if (item) {
 	                if (previousPoint != item.datapoint) {
 	                    previousPoint = item.datapoint;
 	                    
-	                    $("#msmstooltip").remove();
+	                    $("#"+elementIds.msmstooltip).remove();
 	                    var x = item.datapoint[0].toFixed(2),
 	                        y = item.datapoint[1].toFixed(2);
 	                    
@@ -387,21 +437,21 @@
 	                }
 	            }
 	            else {
-	                $("#msmstooltip").remove();
+	                $("#"+elementIds.msmstooltip).remove();
 	                previousPoint = null;            
 	            }
 	        }
 	    });
-		container.find("#enableTooltip").click(function() {
-			$("#msmstooltip").remove();
+		container.find("#"+elementIds.enableTooltip).click(function() {
+			$(jquery_elem_accessor.msmstooltip).remove();
 		});
 		
 		// SHOW / HIDE ION SERIES; UPDATE ON MASS TYPE CHANGE; 
 		// PEAK ASSIGNMENT TYPE CHANGED; PEAK LABEL TYPE CHANGED
-		var ionChoiceContainer = container.find("#ion_choice");
+		var ionChoiceContainer = container.find("#"+elementIds.ion_choice);
 		ionChoiceContainer.find("input").click(plotAccordingToChoices);
 		
-		var neutralLossContainer = container.find("#nl_choice");
+		var neutralLossContainer = container.find("#"+elementIds.nl_choice);
 		neutralLossContainer.find("input").click(function() {
 			selectedNeutralLossChanged = true;
 			plotAccordingToChoices();
@@ -419,7 +469,7 @@
 	    	peakLabelTypeChanged = true;
 	    	plotAccordingToChoices();
 	    });
-	    container.find("#deselectIonsLink").click(function() {
+	    container.find("#"+elementIds.deselectIonsLink).click(function() {
 			ionChoiceContainer.find("input:checkbox:checked").each(function() {
 				$(this).attr('checked', "");
 			});
@@ -459,9 +509,9 @@
 		
     	var zoom_x = false;
 		var zoom_y = false;
-		if(container.find("#zoom_x").is(":checked"))
+		if(container.find("#"+elementIds.zoom_x).is(":checked"))
 			zoom_x = true;
-		if(container.find("#zoom_y").is(":checked"))
+		if(container.find("#"+elementIds.zoom_y).is(":checked"))
 			zoom_y = true;
     	if(zoom_x && zoom_y) {
     		plotOptions.selection.mode = "xy";
@@ -478,7 +528,7 @@
 	}
 	
 	function showTooltip(x, y, contents) {
-        $('<div id="msmstooltip">' + contents + '</div>').css( {
+        $('<div id="'+elementIds.msmstooltip+'">' + contents + '</div>').css( {
             position: 'absolute',
             display: 'none',
             top: y + 5,
@@ -492,7 +542,7 @@
 	
 	function makePlotResizable() {
 		
-		container.find("#slider_width").slider({
+		container.find("#"+elementIds.slider_width).slider({
 			value:options.width,
 			min: 100,
 			max: 1500,
@@ -501,17 +551,17 @@
 				var width = ui.value;
 				//console.log(ui.value);
 				options.width = width;
-				container.find("#msmsplot").css({width: width});
+				container.find("#"+elementIds.msmsplot).css({width: width});
 				plotAccordingToChoices();
 				if(options.ms1peaks && options.ms1peaks.length > 0) {
-					container.find("#msplot").css({width: width});
+					container.find("#"+elementIds.msPlot).css({width: width});
 					createMs1Plot(ms1zoomRange);
 				}
-				container.find("#slider_width_val").text(width);
+				container.find("#"+elementIds.slider_width_val).text(width);
 			}
 		});
 		
-		container.find("#slider_height").slider({
+		container.find("#"+elementIds.slider_height).slider({
 			value:options.height,
 			min: 100,
 			max: 1000,
@@ -520,27 +570,27 @@
 				var height = ui.value;
 				//console.log(ui.value);
 				options.height = height
-				container.find("#msmsplot").css({height: height});
+				container.find("#"+elementIds.msmsplot).css({height: height});
 				plotAccordingToChoices();
-				container.find("#slider_height_val").text(height);
+				container.find("#"+elementIds.slider_height_val).text(height);
 			}
 		});
 	}
 	
 	function printPlot() {
-		container.find("#printLink").click(function() {
+		container.find("#"+elementIds.printLink).click(function() {
 			
 			// create another div and move the plots into that div
 			$(document.body).append('<div id="tempPrintDiv"></div>');
-			$("#tempPrintDiv").append($("#lorikeet_content").detach());
-			$("#tempPrintDiv").siblings().addClass("noprint");
+			$("#tempPrintDiv").append($(jquery_elem_accessor.lorikeet_content).detach());
+			//$("#tempPrintDiv").siblings().addClass("noprint");
 			
 			
 			container.find(".bar").addClass('noprint');
-			container.find('#optionsTable').addClass('noprint');
-			container.find('#ionTableLoc1').addClass('noprint');
-			container.find('#ionTableLoc2').addClass('noprint');
-			container.find('#viewOptionsDiv').addClass('noprint');
+			container.find("#"+elementIds.optionsTable).addClass('noprint');
+			container.find("#"+elementIds.ionTableLoc1).addClass('noprint');
+			container.find("#"+elementIds.ionTableLoc2).addClass('noprint');
+			container.find("#"+elementIds.viewOptionsDiv).addClass('noprint');
 			
 			plotOptions.series.peaks.print = true; // draw the labels in the DOM for sharper print output
 			plotAccordingToChoices();
@@ -550,10 +600,10 @@
 			// remove the class after printing so that if the user prints 
 			// via the browser's print menu the whole page is printed
 			container.find(".bar").removeClass('noprint');
-			container.find('#optionsTable').removeClass('noprint');
-			container.find('#ionTableLoc1').removeClass('noprint');
-			container.find('#ionTableLoc2').removeClass('noprint');
-			container.find('#viewOptionsDiv').removeClass('noprint');
+			container.find("#"+elementIds.optionsTable).removeClass('noprint');
+			container.find("#"+elementIds.ionTableLoc1).removeClass('noprint');
+			container.find("#"+elementIds.ionTableLoc2).removeClass('noprint');
+			container.find("#"+elementIds.viewOptionsDiv).removeClass('noprint');
 			$("#tempPrintDiv").siblings().removeClass("noprint");
 			
 			
@@ -561,7 +611,7 @@
 			plotAccordingToChoices();
 			
 			// move the plots back to the original location
-			$("#lorikeet").append($("#lorikeet_content").detach());
+			user_parent_div.append($("#tempPrintDiv > #"+elementIds.lorikeet_content).detach());
 			$("#tempPrintDiv").remove();
 			
 			
@@ -616,8 +666,8 @@
 
 		var ions = [];
 		var charges = [];
-		
-		container.find("#ion_choice").find("input:checked").each(function () {
+		var temp = container.find("#"+elementIds.ion_choice);
+		container.find("#"+elementIds.ion_choice).find("input:checked").each(function () {
 	        var key = $(this).attr("id");
 	        var tokens = key.split("_");
 	        ions.push(tokens[0]);
@@ -863,7 +913,7 @@
 		matchData[1] = []; // labels -- ions;
 		
 		var neutralLosses = [];
-		container.find("#nl_choice").find("input:checked").each(function() {
+		container.find("#"+elementIds.nl_choice).find("input:checked").each(function() {
 			neutralLosses.push($(this).val());
 		});
 		for(var i = 0; i < ionSeries.length; i += 1) {
@@ -967,79 +1017,80 @@
 		return peakIndex;
 	}
 	
-	
+
 	// -----------------------------------------------
 	// INITIALIZE THE CONTAINER
 	// -----------------------------------------------
 	function initContainer(div, options) {
-		
-		var rowspan = 2;
-		
-		div.append('<div id="lorikeet_content"></div>');
-		container = $("#lorikeet_content");
-		container.addClass("lorikeet");
-		
+
+        var rowspan = 2;
+
+		div.append('<div id="'+elementIds.lorikeet_content+'"></div>');
+
+		container = $(jquery_elem_accessor.lorikeet_content);
+        container.addClass("lorikeet");
+
 		var parentTable = '<table cellpadding="0" cellspacing="5"> ';
 		parentTable += '<tbody> ';
 		parentTable += '<tr> ';
-		
+
 		// Header
 		parentTable += '<td colspan="3" class="bar"> ';
 		parentTable += '</div> ';
 		parentTable += '</td> ';
 		parentTable += '</tr> ';
-	
+
 		// options table
 		parentTable += '<tr> ';
-		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="optionsTable"> ';
+		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="'+elementIds.optionsTable+'"> ';
 		parentTable += '</td> ';
-		
+
 		// placeholder for sequence, m/z, scan number etc
-		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="bottom" align="center"> '; 
-		parentTable += '<div id="seqinfo" style="width:100%;"></div> ';
+		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="bottom" align="center"> ';
+		parentTable += '<div id="'+elementIds.seqinfo+'" style="width:100%;"></div> ';
 		// placeholder for file name, scan number and charge
-		parentTable += '<div id="fileinfo" style="width:100%;"></div> ';
+		parentTable += '<div id="'+elementIds.fileinfo+'" style="width:100%;"></div> ';
 		parentTable += '</td> ';
-		
-		
+
+
 		// placeholder for the ion table
-		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="ionTableLoc1" > ';
-		parentTable += '<div id="ionTableDiv">';
-		parentTable += '<span id="moveIonTable" class="font_small link">[Click]</span> <span class="font_small">to move table</span>';
+		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="'+elementIds.ionTableLoc1+'" > ';
+		parentTable += '<div id="'+elementIds.ionTableDiv+'">';
+		parentTable += '<span id="'+elementIds.moveIonTable+'" class="font_small link">[Click]</span> <span class="font_small">to move table</span>';
 		// placeholder for file name, scan number, modifications etc.
-		parentTable += '<div id="modinfo" style="margin-top:5px;"></div> ';
+		parentTable += '<div id="'+elementIds.modInfo+'" style="margin-top:5px;"></div> ';
 		parentTable += '</div> ';
 		parentTable += '</td> ';
 		parentTable += '</tr> ';
-		
-		
+
+
 		// placeholders for the ms/ms plot
 		parentTable += '<tr> ';
-		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> '; 
-		parentTable += '<div id="msmsplot" align="bottom" style="width:'+options.width+'px;height:'+options.height+'px;"></div> ';
-		
+		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> ';
+		parentTable += '<div id="'+elementIds.msmsplot+'" align="bottom" style="width:'+options.width+'px;height:'+options.height+'px;"></div> ';
+
 		// placeholder for viewing options (zoom, plot size etc.)
-		parentTable += '<div id="viewOptionsDiv" align="top" style="margin-top:15px;"></div> ';
-		
+		parentTable += '<div id="'+elementIds.viewOptionsDiv+'" align="top" style="margin-top:15px;"></div> ';
+
 		// placeholder for ms1 plot (if data is available)
 		if(options.ms1peaks && options.ms1peaks.length > 0) {
-			parentTable += '<div id="msplot" style="width:'+options.width+'px;height:100px;"></div> ';
+			parentTable += '<div id="'+elementIds.msPlot+'" style="width:'+options.width+'px;height:100px;"></div> ';
 		}
 		parentTable += '</td> ';
 		parentTable += '</tr> ';
-		
-		
+
+
 		// Footer & placeholder for moving ion table
 		parentTable += '<tr> ';
-		parentTable += '<td colspan="3" class="bar noprint" valign="top" align="center" id="ionTableLoc2" > ';
+		parentTable += '<td colspan="3" class="bar noprint" valign="top" align="center" id="'+elementIds.ionTableLoc2+'" > ';
 		parentTable += '<div align="center" style="width:100%;font-size:10pt;"> ';
 		parentTable += '</div> ';
 		parentTable += '</td> ';
 		parentTable += '</tr> ';
-		
+
 		parentTable += '</tbody> ';
 		parentTable += '</table> ';
-		
+
 		container.append(parentTable);
 		
 		return container;
@@ -1047,23 +1098,23 @@
 	
 	function makeIonTableMovable() {
 		
-		container.find("#moveIonTable").hover(
+		container.find("#"+elementIds.moveIonTable).hover(
 			function(){
 		         $(this).css({cursor:'pointer'}); //mouseover
 		    }
 		);
 		
-		container.find("#moveIonTable").click(function() {
-			var ionTableDiv = container.find("#ionTableDiv");
+		container.find("#"+elementIds.moveIonTable).click(function() {
+			var ionTableDiv = container.find("#"+elementIds.ionTableDiv);
 			if(ionTableDiv.is(".moved")) {
 				ionTableDiv.removeClass("moved");
 				ionTableDiv.detach();
-				container.find("#ionTableLoc1").append(ionTableDiv);
+				container.find("#"+elementIds.ionTableLoc1).append(ionTableDiv);
 			}
 			else {
 				ionTableDiv.addClass("moved");
 				ionTableDiv.detach();
-				container.find("#ionTableLoc2").append(ionTableDiv);
+				container.find("#"+elementIds.ionTableLoc2).append(ionTableDiv);
 			}
 		});
 	}
@@ -1080,7 +1131,7 @@
 		var ctermIons = getSelectedCtermIons(selectedIonTypes);
 		
 		var myTable = '' ;
-		myTable += '<table id="ionTable" cellpadding="2" class="font_small">' ;
+		myTable += '<table id="'+elementIds.ionTable+'" cellpadding="2" class="font_small">' ;
 		myTable +=  "<thead>" ;
 		myTable +=   "<tr>";
 		// nterm ions
@@ -1151,8 +1202,8 @@
 		myTable += "</table>";
 		
 		//alert(myTable);
-		container.find("#ionTable").remove();
-		container.find("#ionTableDiv").prepend(myTable); // add as the first child
+		container.find("#"+elementIds.ionTable).remove();
+		container.find("#"+elementIds.ionTableDiv).prepend(myTable); // add as the first child
 	}
 	
 	function getCalculatedSeries(ion) {
@@ -1206,8 +1257,8 @@
 		}
 		
 		// first clear the div if it has anything
-		container.find("#seqinfo").empty();
-		container.find("#seqinfo").append(specinfo);
+		container.find("#"+elementIds.seqinfo).empty();
+		container.find("#"+elementIds.seqinfo).append(specinfo);
 	}
 	
 	function getModifiedSequence() {
@@ -1248,7 +1299,7 @@
 			fileinfo += '</div>';
 		}
 		
-		container.find("#fileinfo").append(fileinfo);
+		container.find("#"+elementIds.fileinfo).append(fileinfo);
 	}
 	
 	//---------------------------------------------------------
@@ -1300,43 +1351,45 @@
 			modInfo += '</div>';
 		}
 		
-		container.find("#modinfo").append(modInfo);
+		container.find("#"+elementIds.modInfo).append(modInfo);
 	}
 	
 	//---------------------------------------------------------
 	// VIEWING OPTIONS TABLE
 	//---------------------------------------------------------
-	function makeViewingOptions() {
+	function makeViewingOptions(showOptions) {
 		
 		var myContent = '';
 		
 		// reset zoom option
 		myContent += '<nobr> ';
 		myContent += '<span style="width:100%; font-size:8pt; margin-top:5px; color:sienna;">Click and drag in the plot to zoom</span> ';
-		myContent += 'X:<input id="zoom_x" type="checkbox" value="X" checked="checked"/> ';
-		myContent += '&nbsp;Y:<input id="zoom_y" type="checkbox" value="Y" /> ';
-		myContent += '&nbsp;<input id="resetZoom" type="button" value="Zoom Out" /> ';
-		myContent += '&nbsp;<input id="printLink" type="button" value="Print" /> ';
+		myContent += 'X:<input id="'+elementIds.zoom_x+'" type="checkbox" value="X" checked="checked"/> ';
+		myContent += '&nbsp;Y:<input id="'+elementIds.zoom_y+'" type="checkbox" value="Y" /> ';
+		myContent += '&nbsp;<input id="'+elementIds.resetZoom+'" type="button" value="Zoom Out" /> ';
+		myContent += '&nbsp;<input id="'+elementIds.printLink+'" type="button" value="Print" /> ';
 		myContent += '</nobr> ';
 		
 		myContent += '&nbsp;&nbsp;';
 		
 		// tooltip option
 		myContent += '<nobr> ';
-		myContent += '<input id="enableTooltip" type="checkbox">Enable tooltip ';
+		myContent += '<input id="'+elementIds.enableTooltip+'" type="checkbox">Enable tooltip ';
 		myContent += '</nobr> ';
 		
 		myContent += '<br>';
 		
-		container.find("#viewOptionsDiv").append(myContent);
-		
+		container.find("#"+elementIds.viewOptionsDiv).append(myContent);
+		if(!showOptions) {
+            container.find("#"+elementIds.viewOptionsDiv).hide();
+        }
 	}
 	
 	
 	//---------------------------------------------------------
 	// OPTIONS TABLE
 	//---------------------------------------------------------
-	function makeOptionsTable(charge) {
+	function makeOptionsTable(charge, showTable) {
 		
 		//console.log("Given charge: "+charge);
 		var myTable = '';
@@ -1347,7 +1400,7 @@
 		myTable += '<tr><td class="optionCell"> ';
 		
 		myTable += '<b>Ions:</b> ';
-		myTable += '<div id="ion_choice" style="margin-bottom: 10px"> ';
+		myTable += '<div id="'+elementIds.ion_choice+'" style="margin-bottom: 10px"> ';
 		myTable += '<!-- a ions --> ';
 		myTable += '<nobr> ';
 		myTable += '<b>a</b> ';
@@ -1408,11 +1461,11 @@
 		myTable += '<input type="checkbox" value="3" id="z_3"/>3<sup>+</sup> ';
 		myTable += '</nobr> ';
 		myTable += '<br/> ';
-		myTable += '<span id="deselectIonsLink" style="font-size:8pt;text-decoration: underline; color:sienna;cursor:pointer;">[Deselect All]</span> ';
+		myTable += '<span id="'+elementIds.deselectIonsLink+'" style="font-size:8pt;text-decoration: underline; color:sienna;cursor:pointer;">[Deselect All]</span> ';
 		myTable += '</div> ';
 		
 		myTable += '<b>Neutral Loss:</b> ';
-		myTable += '<div id="nl_choice"> ';
+		myTable += '<div id="'+elementIds.nl_choice+'"> ';
 		myTable += '<nobr> <input type="checkbox" value="h2o" id="h2o"/> ';
 		myTable += ' H<sub>2</sub>O (<b>o</b>)';
 		myTable += '</nobr> ';
@@ -1436,7 +1489,7 @@
 		myTable += '<nobr>Mass Tol: <input id="massError" type="text" value="'+options.massError+'" size="4"/></nobr> ';
 		myTable += '</div> ';
 		myTable += '<div style="margin-top:10px;" align="center"> ';
-		myTable += '<input id="update" type="button" value="Update"/> ';
+		myTable += '<input id="'+elementIds.update+'" type="button" value="Update"/> ';
 		myTable += '</div> ';
 		myTable += '</td> </tr> ';
 		
@@ -1459,17 +1512,20 @@
 		
 		// sliders to change plot size
 		myTable += '<tr><td class="optionCell"> ';
-		myTable += '<div>Width: <span id="slider_width_val">'+options.width+'</span></div> '
-		myTable += '<div id="slider_width" style="margin-bottom:15px;"></div> ';
-		myTable += '<div>Height: <span id="slider_height_val">'+options.height+'</span></div> '
-		myTable += '<div id="slider_height"></div> ';
+		myTable += '<div>Width: <span id="'+elementIds.slider_width_val+'">'+options.width+'</span></div> '
+		myTable += '<div id="'+elementIds.slider_width+'" style="margin-bottom:15px;"></div> ';
+		myTable += '<div>Height: <span id="'+elementIds.slider_height_val+'">'+options.height+'</span></div> '
+		myTable += '<div id="'+elementIds.slider_height+'"></div> ';
 		myTable += '</td> </tr> ';
 
 		myTable += '</tbody>';
 		myTable += '</table>';
-		
-		container.find("#optionsTable").append(myTable);
+
+		container.find("#"+elementIds.optionsTable).append(myTable);
+        if(!showTable) {
+            container.find("#"+elementIds.optionsTable).hide();
+        }
 	}
-	
+
 	
 })(jQuery);
