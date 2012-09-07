@@ -27,8 +27,8 @@
                 showViewingOptions: true
         };
 			
-	    var options = $.extend({}, defaults, opts); // this is a shallow copy
-			
+	    var options = $.extend(true, {}, defaults, opts); // this is a deep copy
+
         return this.each(function() {
 
             index = index + 1;
@@ -108,8 +108,9 @@
         }
         options.variableMods = parsedVarMods;
 
-        var input = new Peptide(options.sequence, options.staticMods, options.variableMods,
+        var peptide = new Peptide(options.sequence, options.staticMods, options.variableMods,
                                 options.ntermMod, options.ctermMod);
+        options.peptide = peptide;
 
         var container = createContainer(parent_container);
         // alert(container.attr('id')+" parent "+container.parent().attr('id'));
@@ -283,7 +284,7 @@
 			}
 			// Otherwise calculate a theoretical m/z from the given sequence and charge
 			else if(options.sequence && options.charge) {
-				var mass = Peptide.getNeutralMassMono();
+				var mass = options.peptide.getNeutralMassMono();
 				precursorMz = Ion.getMz(mass, options.charge);
 			}
 			
@@ -839,9 +840,9 @@
 						var tion = todoIonSeries[j];
 						var ionSeriesData = todoIonSeriesData[j];
 						if(tion.term == "n")
-							ionSeriesData.push(sion = Ion.getSeriesIon(tion, sequence, i, massType));
+							ionSeriesData.push(sion = Ion.getSeriesIon(tion, container.data("options").peptide, i, massType));
 						else if(tion.term == "c")
-							ionSeriesData.unshift(sion = Ion.getSeriesIon(tion, sequence, i, massType));
+							ionSeriesData.unshift(sion = Ion.getSeriesIon(tion, container.data("options").peptide, i, massType));
 					}
 				}
 			}
@@ -959,7 +960,7 @@
 	}
 
 	function calculateMatchingPeaks(container, ionSeries, allPeaks, massTolerance, peakAssignmentType) {
-		
+
 		var peakIndex = 0;
 		
 		var matchData = [];
@@ -1213,7 +1214,7 @@
 			}
 			
 			myTable += "<td class='numCell'>"+(i+1)+"</td>";
-			if(Peptide.varMods[i+1])
+			if(options.peptide.varMods()[i+1])
 				myTable += "<td class='seq modified'>"+aaChar+"</td>";
 			else
 				myTable += "<td class='seq'>"+aaChar+"</td>";
@@ -1304,9 +1305,9 @@
 			var neutralMass = 0;
 			
 			if(massType == "mono")
-				neutralMass = Peptide.getNeutralMassMono();
+				neutralMass = options.peptide.getNeutralMassMono();
 			else if(massType == "avg")
-				neutralMass = Peptide.getNeutralMassAvg();
+				neutralMass = options.peptide.getNeutralMassAvg();
 				
 			
 			var mz;
@@ -1332,7 +1333,7 @@
 		var modSeq = '';
 		for(var i = 0; i < options.sequence.length; i += 1) {
 			
-			if(Peptide.varMods[i+1])
+			if(options.peptide.varMods()[i+1])
 				modSeq += '<span style="background-color:yellow;padding:1px;border:1px dotted #CFCFCF;">'+options.sequence.charAt(i)+"</span>";
 			else
 				modSeq += options.sequence.charAt(i);

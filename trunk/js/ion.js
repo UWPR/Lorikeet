@@ -98,19 +98,19 @@ Ion.MASS_N_14 = MASS_N_14;
 Ion.MASS_O_16 = MASS_O_16;
 
 // massType can be "mono" or "avg"
-Ion.getSeriesIon = function _getSeriesIon(ion, sequence, idxInSeq, massType) {
+Ion.getSeriesIon = function _getSeriesIon(ion, peptide, idxInSeq, massType) {
 	if(ion.type == "a")	
-		return new Ion_A (sequence, idxInSeq, ion.charge, massType);
+		return new Ion_A (peptide, idxInSeq, ion.charge, massType);
 	if(ion.type == "b")
-		return new Ion_B (sequence, idxInSeq, ion.charge, massType);
+		return new Ion_B (peptide, idxInSeq, ion.charge, massType);
 	if(ion.type == "c")
-		return new Ion_C (sequence, idxInSeq, ion.charge, massType);
+		return new Ion_C (peptide, idxInSeq, ion.charge, massType);
 	if(ion.type == "x")
-		return new Ion_X (sequence, idxInSeq, ion.charge, massType);
+		return new Ion_X (peptide, idxInSeq, ion.charge, massType);
 	if(ion.type == "y")
-		return new Ion_Y (sequence, idxInSeq, ion.charge, massType);
+		return new Ion_Y (peptide, idxInSeq, ion.charge, massType);
 	if(ion.type == "z")
-		return new Ion_Z (sequence, idxInSeq, ion.charge, massType);
+		return new Ion_Z (peptide, idxInSeq, ion.charge, massType);
 }
 
 function _makeIonLabel(type, index, charge) {
@@ -138,13 +138,13 @@ Ion.getMz = _getMz;
 Ion.getWaterLossMz = _getWaterLossMz;
 Ion.getAmmoniaLossMz = _getAmmoniaLossMz;
 
-function Ion_A (sequence, endIdxPlusOne, charge, massType) {
+function Ion_A (peptide, endIdxPlusOne, charge, massType) {
 	// Neutral mass:  	 [N]+[M]-CHO  ; N = mass of neutral N terminal group
 	var mass = 0;
 	if(massType == "mono")
-		mass = Peptide.getSeqMassMono(sequence, endIdxPlusOne, "n") - (MASS_C_12 + MASS_O_16);
+		mass = peptide.getSeqMassMono(endIdxPlusOne, "n") - (MASS_C_12 + MASS_O_16);
 	else if(massType == "avg")
-		mass = Peptide.getSeqMassAvg(sequence, endIdxPlusOne, "n") - (MASS_C + MASS_O);
+		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n") - (MASS_C + MASS_O);
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("a",endIdxPlusOne, charge);
@@ -153,13 +153,13 @@ function Ion_A (sequence, endIdxPlusOne, charge, massType) {
 	return this;
 }
 
-function Ion_B (sequence, endIdxPlusOne, charge, massType) {
+function Ion_B (peptide, endIdxPlusOne, charge, massType) {
 	// Neutral mass:    [N]+[M]-H  ; N = mass of neutral N terminal group
 	var mass = 0;
 	if(massType == "mono")
-		mass = Peptide.getSeqMassMono(sequence, endIdxPlusOne, "n");
+		mass = peptide.getSeqMassMono(endIdxPlusOne, "n");
 	else if(massType == "avg")
-		mass = Peptide.getSeqMassAvg(sequence, endIdxPlusOne, "n");
+		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n");
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("b", endIdxPlusOne, charge);
@@ -168,13 +168,13 @@ function Ion_B (sequence, endIdxPlusOne, charge, massType) {
 	return this;
 }
 
-function Ion_C (sequence, endIdxPlusOne, charge, massType) {
+function Ion_C (peptide, endIdxPlusOne, charge, massType) {
 	// Neutral mass:    [N]+[M]+NH2  ; N = mass of neutral N terminal group
 	var mass = 0;
 	if(massType == "mono")
-		mass = Peptide.getSeqMassMono(sequence, endIdxPlusOne, "n") + MASS_H_1 + (MASS_N_14 + 2*MASS_H_1);
+		mass = peptide.getSeqMassMono(endIdxPlusOne, "n") + MASS_H_1 + (MASS_N_14 + 2*MASS_H_1);
 	else if(massType == "avg")
-		mass = Peptide.getSeqMassAvg(sequence, endIdxPlusOne, "n") + MASS_H + (MASS_N + 2*MASS_H);
+		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n") + MASS_H + (MASS_N + 2*MASS_H);
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
 	this.label = _makeIonLabel("c", endIdxPlusOne, charge);
@@ -183,47 +183,47 @@ function Ion_C (sequence, endIdxPlusOne, charge, massType) {
 	return this;
 }
 
-function Ion_X (sequence, startIdx, charge, massType) {
+function Ion_X (peptide, startIdx, charge, massType) {
 	// Neutral mass = [C]+[M]+CO-H ; C = mass of neutral C-terminal group (OH)
 	var mass = 0;
 	if(massType == "mono")
-		mass = Peptide.getSeqMassMono(sequence, startIdx, "c") + 2*MASS_O_16 + MASS_C_12;
+		mass = peptide.getSeqMassMono(startIdx, "c") + 2*MASS_O_16 + MASS_C_12;
 	else if(massType == "avg")
-		mass = Peptide.getSeqMassAvg(sequence, startIdx, "c") + 2*MASS_O + MASS_C;
+		mass = peptide.getSeqMassAvg(startIdx, "c") + 2*MASS_O + MASS_C;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-	this.label = _makeIonLabel("x", sequence.length - startIdx, charge);
+	this.label = _makeIonLabel("x", peptide.sequence().length - startIdx, charge);
 	this.match = false;
 	this.term = "c";
 	return this;
 }
 
-function Ion_Y (sequence, startIdx, charge, massType) {
+function Ion_Y (peptide, startIdx, charge, massType) {
 	// Neutral mass = [C]+[M]+H ; C = mass of neutral C-terminal group (OH)
 	var mass = 0;
 	if(massType == "mono")
-		mass = Peptide.getSeqMassMono(sequence, startIdx, "c") + 2*MASS_H_1 + MASS_O_16;
+		mass = peptide.getSeqMassMono(startIdx, "c") + 2*MASS_H_1 + MASS_O_16;
 	else if(massType == "avg")
-		mass = Peptide.getSeqMassAvg(sequence, startIdx, "c") + 2*MASS_H + MASS_O;
+		mass = peptide.getSeqMassAvg(startIdx, "c") + 2*MASS_H + MASS_O;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-	this.label = _makeIonLabel("y", sequence.length - startIdx, charge);
+    this.label = _makeIonLabel("y", peptide.sequence().length - startIdx, charge);
 	this.match = false;
 	this.term = "c";
 	return this;
 }
 
-function Ion_Z (sequence, startIdx, charge, massType) {
+function Ion_Z (peptide, startIdx, charge, massType) {
 	// Neutral mass = [C]+[M]-NH2 ; C = mass of neutral C-terminal group (OH)
 	// We're really printing Z-dot ions so we add an H to make it OH+[M]-NH2 +H = [M]+O-N
 	var mass = 0;
 	if(massType == "mono")
-		mass = Peptide.getSeqMassMono(sequence, startIdx, "c") + MASS_O_16 - MASS_N_14;
+		mass = peptide.getSeqMassMono(startIdx, "c") + MASS_O_16 - MASS_N_14;
 	else if(massType == "avg")
-		mass = Peptide.getSeqMassAvg(sequence, startIdx, "c") + MASS_O - MASS_N;
+		mass = peptide.getSeqMassAvg(startIdx, "c") + MASS_O - MASS_N;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-	this.label = _makeIonLabel("z", sequence.length - startIdx, charge);
+	this.label = _makeIonLabel("z", peptide.sequence().length - startIdx, charge);
 	this.match = false;
 	this.term = "c";
 	return this;
