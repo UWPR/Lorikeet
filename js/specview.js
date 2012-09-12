@@ -14,6 +14,7 @@
                 ntermMod: 0, // additional mass to be added to the n-term
                 ctermMod: 0, // additional mass to be added to the c-term
                 peaks: [],
+                sparsePeaks: null,
                 ms1peaks: null,
                 ms1scanLabel: null,
                 precursorPeaks: null,
@@ -70,7 +71,8 @@
             ionTableDiv: "ionTableDiv",
             ionTable: "ionTable",
             fileinfo: "fileinfo",
-            seqinfo: "seqinfo"
+            seqinfo: "seqinfo",
+            removeNoise: "removeNoise"
 	};
 
     function getElementId(container, elementId){
@@ -153,7 +155,7 @@
                 ms1zoomRange.yaxis.to = max_intensity;
             }
             createMs1Plot(container);
-            setupMs1PlotInteractions();
+            setupMs1PlotInteractions(container);
         }
 
         setupInteractions(container);
@@ -247,7 +249,7 @@
 		
 		// the MS/MS plot should have been created by now.  This is a hack to get the plots aligned.
 		// We will set the y-axis labelWidth to this value.
-		var labelWidth = plot.getAxes().yaxis.labelWidth;
+		var labelWidth = container.data("plot").getAxes().yaxis.labelWidth;
 		
 		var ms1plotOptions = {
 				series: { peaks: {show: true, shadowSize: 0}, shadowSize: 0},
@@ -377,8 +379,8 @@
 		
 		// allow zooming the plot
 		placeholder.bind("plotselected", function (event, ranges) {
-			createMs1Plot(ranges);
-			container.data("ms1zoomRange", ranges);
+            container.data("ms1zoomRange", ranges);
+			createMs1Plot(container);
 	    });
 		
 	}
@@ -496,21 +498,29 @@
 	    	container.data("massTypeChanged", true);
 	    	plotAccordingToChoices(container);
 	    });
+        $(getElementSelector(container, elementIds.removeNoise)).click(function() {
+            container.data("peakAssignmentTypeChanged", true);
+            plotAccordingToChoices(container);
+        });
+
 	    container.find("input[name='"+getRadioName(container, "peakAssignOpt")+"']").click(function() {
 	    	container.data("peakAssignmentTypeChanged", true);
 	    	plotAccordingToChoices(container);
 	    });
-	    container.find("input[name='"+getRadioName(container, "peakLabelOpt")+"']").click(function() {
-	    	container.data("peakLabelTypeChanged", true);
-	    	plotAccordingToChoices(container);
-	    });
-	    $(getElementSelector(container, elementIds.deselectIonsLink)).click(function() {
+
+        $(getElementSelector(container, elementIds.deselectIonsLink)).click(function() {
 			ionChoiceContainer.find("input:checkbox:checked").each(function() {
 				$(this).attr('checked', "");
 			});
 			
 			plotAccordingToChoices(container);
 		});
+
+	    container.find("input[name='"+getRadioName(container, "peakLabelOpt")+"']").click(function() {
+	    	container.data("peakLabelTypeChanged", true);
+	    	plotAccordingToChoices(container);
+	    });
+
 	    
 	    
 	    // MOVING THE ION TABLE
@@ -854,7 +864,7 @@
 	// MATCH THEORETICAL MASSES WITH PEAKS IN THE SCAN
 	// -----------------------------------------------
 	function recalculate(container) {
-		return (container.data("massErrorChanged") ||
+        return (container.data("massErrorChanged") ||
 				container.data("massTypeChanged") ||
 				container.data("peakAssignmentTypeChanged") ||
 				container.data("selectedNeutralLossChanged"));
@@ -872,6 +882,7 @@
         var ionSeriesLabels = container.data("ionSeriesLabels");
         var options = container.data("options");
         var massError = container.data("massError");
+        var peaks = getPeaks(container);
 
 		for(var j = 0; j < selectedIonTypes.length; j += 1) {
 		
@@ -882,7 +893,7 @@
 				if(recalculate(container) || !ionSeriesMatch.a[ion.charge]) { // re-calculate only if mass error has changed OR
 																		// matching peaks for this series have not been calculated
 					// calculated matching peaks
-					var adata = calculateMatchingPeaks(container, ionSeries.a[ion.charge], options.peaks, massError, peakAssignmentType);
+					var adata = calculateMatchingPeaks(container, ionSeries.a[ion.charge], peaks, massError, peakAssignmentType);
 					if(adata && adata.length > 0) {
 						ionSeriesMatch.a[ion.charge] = adata[0];
 						ionSeriesLabels.a[ion.charge] = adata[1];
@@ -895,7 +906,7 @@
 				if(recalculate(container) || !ionSeriesMatch.b[ion.charge]) { // re-calculate only if mass error has changed OR
 																		// matching peaks for this series have not been calculated
 					// calculated matching peaks
-					var bdata = calculateMatchingPeaks(container, ionSeries.b[ion.charge], options.peaks, massError, peakAssignmentType);
+					var bdata = calculateMatchingPeaks(container, ionSeries.b[ion.charge], peaks, massError, peakAssignmentType);
 					if(bdata && bdata.length > 0) {
 						ionSeriesMatch.b[ion.charge] = bdata[0];
 						ionSeriesLabels.b[ion.charge] = bdata[1];
@@ -908,7 +919,7 @@
 				if(recalculate(container) || !ionSeriesMatch.c[ion.charge]) { // re-calculate only if mass error has changed OR
 																		// matching peaks for this series have not been calculated
 					// calculated matching peaks
-					var cdata = calculateMatchingPeaks(container, ionSeries.c[ion.charge], options.peaks, massError, peakAssignmentType);
+					var cdata = calculateMatchingPeaks(container, ionSeries.c[ion.charge], peaks, massError, peakAssignmentType);
 					if(cdata && cdata.length > 0) {
 						ionSeriesMatch.c[ion.charge] = cdata[0];
 						ionSeriesLabels.c[ion.charge] = cdata[1];
@@ -921,7 +932,7 @@
 				if(recalculate(container) || !ionSeriesMatch.x[ion.charge]) { // re-calculate only if mass error has changed OR
 																		// matching peaks for this series have not been calculated
 					// calculated matching peaks
-					var xdata = calculateMatchingPeaks(container, ionSeries.x[ion.charge], options.peaks, massError, peakAssignmentType);
+					var xdata = calculateMatchingPeaks(container, ionSeries.x[ion.charge], peaks, massError, peakAssignmentType);
 					if(xdata && xdata.length > 0) {
 						ionSeriesMatch.x[ion.charge] = xdata[0];
 						ionSeriesLabels.x[ion.charge] = xdata[1];
@@ -934,7 +945,7 @@
 				if(recalculate(container) || !ionSeriesMatch.y[ion.charge]) { // re-calculate only if mass error has changed OR
 																		// matching peaks for this series have not been calculated
 					// calculated matching peaks
-					var ydata = calculateMatchingPeaks(container, ionSeries.y[ion.charge], options.peaks, massError, peakAssignmentType);
+					var ydata = calculateMatchingPeaks(container, ionSeries.y[ion.charge], peaks, massError, peakAssignmentType);
 					if(ydata && ydata.length > 0) {
 						ionSeriesMatch.y[ion.charge] = ydata[0];
 						ionSeriesLabels.y[ion.charge] = ydata[1];
@@ -947,7 +958,7 @@
 				if(recalculate(container) || !ionSeriesMatch.z[ion.charge]) { // re-calculate only if mass error has changed OR
 																		// matching peaks for this series have not been calculated
 					// calculated matching peaks
-					var zdata = calculateMatchingPeaks(container, ionSeries.z[ion.charge], options.peaks, massError, peakAssignmentType);
+					var zdata = calculateMatchingPeaks(container, ionSeries.z[ion.charge], peaks, massError, peakAssignmentType);
 					if(zdata && zdata.length > 0) {
 						ionSeriesMatch.z[ion.charge] = zdata[0];
 						ionSeriesLabels.z[ion.charge] = zdata[1];
@@ -961,6 +972,7 @@
 
 	function calculateMatchingPeaks(container, ionSeries, allPeaks, massTolerance, peakAssignmentType) {
 
+        // console.log("calculating matching peaks");
 		var peakIndex = 0;
 		
 		var matchData = [];
@@ -1072,6 +1084,89 @@
 		return peakIndex;
 	}
 	
+
+    function getPeaks(container)
+    {
+        var options = container.data("options");
+
+        if($(getElementSelector(container, elementIds.removeNoise)).is(":checked"))
+        {
+            if(options.sparsePeaks == null) {
+                calculateSparsePeaks(container);
+            }
+            return options.sparsePeaks;
+        }
+        else
+        {
+            return options.peaks;
+        }
+    }
+
+    function calculateSparsePeaks(container) {
+
+        console.log("calculating sparse peaks");
+
+        var peaks = container.data("options").peaks;
+        var sparsePeaks = [];
+
+        for(var i = 0; i < peaks.length; i += 1) {
+
+			var peak = peaks[i];
+
+            var intensity = peak[1];
+            var mz = peak[0];
+            var minMz = mz;
+            var maxMz = mz;
+            var j = i-1;
+            var totalIntensity = intensity;
+            var peakCount = 1;
+            // sum up the intensities in the +/- 50Da window of this peak
+            while((minMz >= mz - 50.0) && j >= 0)
+            {
+                totalIntensity += peaks[j][1];
+                minMz = peaks[j][0];
+                j -= 1;
+                peakCount += 1;
+            }
+            j = i+1;
+            while(maxMz <= mz + 50.0 && j < peaks.length)
+            {
+                totalIntensity += peaks[j][1];
+                maxMz = peaks[j][0];
+                j += 1;
+                peakCount += 1;
+            }
+
+            var mean = totalIntensity / peakCount;
+
+            // calculate the standard deviation
+            var sdev = 0;
+            j = i - 1;
+            while((minMz >= mz - 50.0) && j >= 0)
+            {
+                sdev += Math.pow((peaks[j][1] - mean), 2);
+                minMz = peaks[j][0];
+                j -= 1;
+            }
+            j = i+1;
+            while(maxMz <= mz + 50.0 && j < peaks.length)
+            {
+                sdev += Math.pow((peaks[j][1] - mean), 2);
+                maxMz = peaks[j][0];
+                j += 1;
+            }
+            sdev = Math.sqrt(sdev / peakCount);
+
+            if(intensity >= mean + 2 * sdev)
+            {
+                sparsePeaks.push(peak);
+            }
+            //console.log(intensity+"  "+mean+"  "+sdev);
+		}
+        console.log("Sparse Peak count: "+sparsePeaks.length);
+        console.log("All Peaks count: "+peaks.length);
+        container.data("options").sparsePeaks = sparsePeaks;
+    }
 
 	// -----------------------------------------------
 	// INITIALIZE THE CONTAINER
@@ -1571,7 +1666,8 @@
 		myTable += '<tr><td class="optionCell"> ';
 		myTable+= '<div> Peak Assignment:<br/> ';
 		myTable+= '<input type="radio" name="'+getRadioName(container, "peakAssignOpt")+'" value="intense" checked="checked"/><span style="font-weight: bold;">Most Intense</span><br/> ';
-		myTable+= '<input type="radio" name="'+getRadioName(container, "peakAssignOpt")+'" value="close"/><span style="font-weight: bold;">Nearest Match</span> ';
+		myTable+= '<input type="radio" name="'+getRadioName(container, "peakAssignOpt")+'" value="close"/><span style="font-weight: bold;">Nearest Match</span><br/> ';
+        myTable+= '<input type="checkbox" value="true" checked="checked" id="'+getElementId(container, elementIds.removeNoise)+'"/><span style="font-weight:bold;">Remove Noise</span>';
 		myTable+= '</div> ';
 		myTable += '</td> </tr> ';
 		
