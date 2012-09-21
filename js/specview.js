@@ -25,7 +25,9 @@
                 massError: 0.5, // mass tolerance for labeling peaks
                 extraPeakSeries:[],
                 showIonTable: true,
-                showViewingOptions: true
+                showViewingOptions: true,
+                showOptionsTable: true,
+                showSequenceInfo: true
         };
 			
 	    var options = $.extend(true, {}, defaults, opts); // this is a deep copy
@@ -127,9 +129,11 @@
 
         makeViewingOptions(container, options);
 
-        showSequenceInfo(container, options);
-        showFileInfo(container, options);
-        showModInfo(container, options);
+        if(options.showSequenceInfo) {
+            showSequenceInfo(container, options);
+            showFileInfo(container, options);
+            showModInfo(container, options);
+        }
 
 
         createPlot(container, getDatasets(container)); // Initial MS/MS Plot
@@ -160,7 +164,9 @@
 
         setupInteractions(container);
 
-        makeIonTable(container);
+        if(options.showIonTable) {
+            makeIonTable(container);
+        }
     }
 
     function storeContainerData(container, options) {
@@ -1104,7 +1110,7 @@
 
     function calculateSparsePeaks(container) {
 
-        console.log("calculating sparse peaks");
+        // console.log("calculating sparse peaks");
 
         var peaks = container.data("options").peaks;
         var sparsePeaks = [];
@@ -1163,8 +1169,8 @@
             }
             //console.log(intensity+"  "+mean+"  "+sdev);
 		}
-        console.log("Sparse Peak count: "+sparsePeaks.length);
-        console.log("All Peaks count: "+peaks.length);
+        // console.log("Sparse Peak count: "+sparsePeaks.length);
+        // console.log("All Peaks count: "+peaks.length);
         container.data("options").sparsePeaks = sparsePeaks;
     }
 
@@ -1200,23 +1206,27 @@
 		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="'+getElementId(container, elementIds.optionsTable)+'"> ';
 		parentTable += '</td> ';
 
-		// placeholder for sequence, m/z, scan number etc
-		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="bottom" align="center"> ';
-		parentTable += '<div id="'+getElementId(container, elementIds.seqinfo)+'" style="width:100%;"></div> ';
-		// placeholder for file name, scan number and charge
-		parentTable += '<div id="'+getElementId(container, elementIds.fileinfo)+'" style="width:100%;"></div> ';
-		parentTable += '</td> ';
+        if(options.showSequenceInfo) {
+            // placeholder for sequence, m/z, scan number etc
+            parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="bottom" align="center"> ';
+            parentTable += '<div id="'+getElementId(container, elementIds.seqinfo)+'" style="width:100%;"></div> ';
+            // placeholder for file name, scan number and charge
+            parentTable += '<div id="'+getElementId(container, elementIds.fileinfo)+'" style="width:100%;"></div> ';
+            parentTable += '</td> ';
+        }
 
 
-		// placeholder for the ion table
-		parentTable += '<td rowspan="'+rowspan+'" valign="top" id="'+getElementId(container, elementIds.ionTableLoc1)+'" > ';
-		parentTable += '<div id="'+getElementId(container, elementIds.ionTableDiv)+'">';
-		parentTable += '<span id="'+getElementId(container, elementIds.moveIonTable)+'" class="font_small link">[Click]</span> <span class="font_small">to move table</span>';
-		// placeholder for file name, scan number, modifications etc.
-		parentTable += '<div id="'+getElementId(container, elementIds.modInfo)+'" style="margin-top:5px;"></div> ';
-		parentTable += '</div> ';
-		parentTable += '</td> ';
-		parentTable += '</tr> ';
+        if(options.showIonTable) {
+            // placeholder for the ion table
+            parentTable += '<td rowspan="'+rowspan+'" valign="top" id="'+getElementId(container, elementIds.ionTableLoc1)+'" > ';
+            parentTable += '<div id="'+getElementId(container, elementIds.ionTableDiv)+'">';
+            parentTable += '<span id="'+getElementId(container, elementIds.moveIonTable)+'" class="font_small link">[Click]</span> <span class="font_small">to move table</span>';
+            // placeholder for modifications
+            parentTable += '<div id="'+getElementId(container, elementIds.modInfo)+'" style="margin-top:5px;"></div> ';
+            parentTable += '</div> ';
+            parentTable += '</td> ';
+            parentTable += '</tr> ';
+        }
 
 
 		// placeholders for the ms/ms plot
@@ -1667,7 +1677,7 @@
 		myTable+= '<div> Peak Assignment:<br/> ';
 		myTable+= '<input type="radio" name="'+getRadioName(container, "peakAssignOpt")+'" value="intense" checked="checked"/><span style="font-weight: bold;">Most Intense</span><br/> ';
 		myTable+= '<input type="radio" name="'+getRadioName(container, "peakAssignOpt")+'" value="close"/><span style="font-weight: bold;">Nearest Match</span><br/> ';
-        myTable+= '<input type="checkbox" value="true" checked="checked" id="'+getElementId(container, elementIds.removeNoise)+'"/><span style="font-weight:bold;">Remove Noise</span>';
+        myTable+= '<input type="checkbox" value="true" checked="checked" id="'+getElementId(container, elementIds.removeNoise)+'"/><span style="font-weight:bold;">Peak Detect</span>';
 		myTable+= '</div> ';
 		myTable += '</td> </tr> ';
 		
@@ -1692,7 +1702,7 @@
 		myTable += '</table>';
 
 		$(getElementSelector(container, elementIds.optionsTable)).append(myTable);
-        if(!options.showIonTable) {
+        if(!options.showOptionsTable) {
             $(getElementSelector(container, elementIds.optionsTable)).hide();
         }
 	}
