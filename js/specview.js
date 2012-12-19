@@ -9,6 +9,7 @@
                 fileName: null,
                 charge: null,
                 precursorMz: null,
+                precursorIntensity: null,
                 staticMods: [],
                 variableMods: [],
                 ntermMod: 0, // additional mass to be added to the n-term
@@ -137,27 +138,72 @@
 
 
         createPlot(container, getDatasets(container)); // Initial MS/MS Plot
+
         if(options.ms1peaks && options.ms1peaks.length > 0) {
-            if(options.zoomMs1 && options.precursorMz) {
 
-                var ms1zoomRange = container.data("ms1zoomRange");
+            var precursorMz;
 
-                ms1zoomRange = {xaxis: {}, yaxis: {}};
-                ms1zoomRange.xaxis.from = options.precursorMz - 5.0;
-                ms1zoomRange.xaxis.to = options.precursorMz + 5.0;
-                var max_intensity = 0;
-                for(var j = 0; j < options.ms1peaks.length; j += 1) {
-                    var pk = options.ms1peaks[j];
-                    if(pk[0] < options.precursorMz - 5.0)
-                        continue;
-                    if(pk[0] > options.precursorMz + 5.0)
-                        break;
-                    if(pk[1] > max_intensity)
-                        max_intensity = pk[1];
-                }
-                ms1zoomRange.yaxis.from = 0.0;
-                ms1zoomRange.yaxis.to = max_intensity;
+            // If we are given a precursor m/z use it
+            if(options.precursorMz) {
+                precursorMz = options.precursorMz;
             }
+            // Otherwise calculate a theoretical m/z from the given sequence and charge
+            else if(options.sequence && options.charge) {
+                var mass = options.peptide.getNeutralMassMono();
+                precursorMz = Ion.getMz(mass, options.charge);
+                options.precursorMz = precursorMz;
+            }
+
+            if(precursorMz)
+            {
+                // Find an actual peak closest to the precursor
+                var diff = 5.0;
+                var x, y;
+
+                for(var i = 0; i < options.ms1peaks.length; i += 1) {
+                    var pk = options.ms1peaks[i];
+                    var d = Math.abs(pk[0] - precursorMz);
+                    if(!diff || d < diff) {
+                        x = pk[0];
+                        y = pk[1];
+                        diff = d;
+                    }
+                }
+                if(diff <= 0.5) {
+                    options.precursorIntensity = y;
+                    // TODO: Add this peak to options.precursors ?
+                }
+
+                // Determine a zoom range
+                if(options.zoomMs1)
+                {
+                    var maxIntensityInRange = 0;
+
+                    for(var j = 0; j < options.ms1peaks.length; j += 1) {
+                        var pk = options.ms1peaks[j];
+
+                        if(pk[0] < options.precursorMz - 5.0)
+                            continue;
+                        if(pk[0] > options.precursorMz + 5.0)
+                            break;
+                        if(pk[1] > maxIntensityInRange)
+                            maxIntensityInRange = pk[1];
+                    }
+
+                    options.maxIntensityInMs1ZoomRange = maxIntensityInRange;
+
+                    // Set the zoom range
+                    var ms1zoomRange = container.data("ms1zoomRange");
+                    ms1zoomRange = {xaxis: {}, yaxis: {}};
+                    ms1zoomRange.xaxis.from = options.precursorMz - 5.0;
+                    ms1zoomRange.xaxis.to = options.precursorMz + 5.0;
+
+                    ms1zoomRange.yaxis.from = 0.0;
+                    ms1zoomRange.yaxis.to = options.maxIntensityInMs1ZoomRange;
+                    container.data("ms1zoomRange", ms1zoomRange);
+                }
+            }
+
             createMs1Plot(container);
             setupMs1PlotInteractions(container);
         }
@@ -282,44 +328,20 @@
         container.data("ms1plot", ms1plot);
 
 
-		// mark the current precursor peak
-		if(options.precursorPeaks) {
-			var x,y, diff, precursorMz;
-			
-			// If we are given a precursor m/z use it
-			if(options.precursorMz) {
-				precursorMz = options.precursorMz;
-			}
-			// Otherwise calculate a theoretical m/z from the given sequence and charge
-			else if(options.sequence && options.charge) {
-				var mass = options.peptide.getNeutralMassMono();
-				precursorMz = Ion.getMz(mass, options.charge);
-			}
-			
-			if(precursorMz) {
-				// find the closest actual peak
-				for(var i = 0; i < options.precursorPeaks.length; i += 1) {
-					var pk = options.precursorPeaks[i];
-					var d = Math.abs(pk[0] - precursorMz);
-					if(!diff || d < diff) {
-						x = pk[0];
-						y = pk[1];
-						diff = d;
-					}
-				}
-				if(diff <= 0.5) {
-					var o = ms1plot.pointOffset({ x: x, y: y});
-				    var ctx = ms1plot.getCanvas().getContext("2d");
-				    ctx.beginPath();
-				    ctx.moveTo(o.left-10, o.top-5);
-				    ctx.lineTo(o.left-10, o.top + 5);
-				    ctx.lineTo(o.left-10 + 10, o.top);
-				    ctx.lineTo(o.left-10, o.top-5);
-				    ctx.fillStyle = "#008800";
-				    ctx.fill();
-				    placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top-4) + 'px;color:#000;font-size:smaller">'+x.toFixed(2)+'</div>');
-				}
-			}
+		// Mark the precursor peak with a green triangle.
+		if(options.precursorMz) {
+
+            var o = ms1plot.pointOffset({ x: options.precursorMz, y: options.precursorIntensity});
+            var ctx = ms1plot.getCanvas().getContext("2d");
+            ctx.beginPath();
+            ctx.moveTo(o.left-10, o.top-5);
+            ctx.lineTo(o.left-10, o.top + 5);
+            ctx.lineTo(o.left-10 + 10, o.top);
+            ctx.lineTo(o.left-10, o.top-5);
+            ctx.fillStyle = "#008800";
+            ctx.fill();
+            placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top-4) + 'px;color:#000;font-size:smaller">'+options.precursorMz.toFixed(2)+'</div>');
+
 		}
 		
 		// mark the scan number if we have it
@@ -328,40 +350,33 @@
 			placeholder.append('<div style="position:absolute;left:' + (o.left + 4) + 'px;top:' + (o.top+4) + 'px;color:#666;font-size:smaller">MS1 scan: '+options.ms1scanLabel+'</div>');
 		}
 		
-		// zoom out icon on plot right hand corner
-		if(container.data("zoomrange")) {
+		// zoom out icon on plot right hand corner if we are not already zoomed in to the precursor.
+		if(container.data("ms1zoomRange")) {
 			placeholder.append('<div id="'+getElementId(container, elementIds.ms1plot_zoom_out)+'" class="zoom_out_link"  style="position:absolute; left:'
 					+ (o.left + ms1plot.width() - 40) + 'px;top:' + (o.top+4) + 'px;"></div>');
 
 			$(getElementSelector(container, elementIds.ms1plot_zoom_out)).click( function() {
-				ms1zoomRange = null;
+				container.data("ms1zoomRange", null);
 				createMs1Plot(container);
 			});
 		}
-		
-		if(options.precursorPeaks) {
+		else {
 			placeholder.append('<div id="'+getElementId(container, elementIds.ms1plot_zoom_in)+'" class="zoom_in_link"  style="position:absolute; left:'
 					+ (o.left + ms1plot.width() - 20) + 'px;top:' + (o.top+4) + 'px;"></div>');
 			$(getElementSelector(container, elementIds.ms1plot_zoom_in)).click( function() {
 				var ranges = {};
 				ranges.yaxis = {};
 				ranges.xaxis = {};
-				ranges.yaxis.from = null;
-				ranges.yaxis.to = null;
-				ranges.xaxis.from = null;
-				ranges.xaxis.to = null;
-				var maxInt = 0;
-				for(var p = 0; p < options.precursorPeaks.length; p += 1) {
-					if(options.precursorPeaks[p][1] > maxInt)
-						maxInt = options.precursorPeaks[p][1];
-				}
-				ranges.yaxis.to = maxInt;
+				ranges.yaxis.from = 0.0;
+				ranges.yaxis.to = options.maxIntensityInMs1ZoomRange;
+
+                ranges.xaxis.from = options.precursorMz - 5.0;
+                ranges.xaxis.to = options.precursorMz + 5.0;
+
                 container.data("ms1zoomRange", ranges);
 				createMs1Plot(container);
 			});
 		}
-		
-
 	}
 
     // -----------------------------------------------
@@ -611,7 +626,7 @@
 				plotAccordingToChoices(container);
 				if(options.ms1peaks && options.ms1peaks.length > 0) {
 					$(getElementSelector(container, elementIds.msPlot)).css({width: width});
-					createMs1Plot(ms1zoomRange);
+					createMs1Plot(container);
 				}
 				$(getElementSelector(container, elementIds.slider_width_val)).text(width);
 			}
