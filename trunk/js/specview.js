@@ -1424,10 +1424,8 @@
 			
 			var neutralMass = 0;
 			
-			if(massType == "mono")
-				neutralMass = options.peptide.getNeutralMassMono();
-			else if(massType == "avg")
-				neutralMass = options.peptide.getNeutralMassAvg();
+			// Always use avg mass for full peptide sequence
+		    neutralMass = options.peptide.getNeutralMassAvg();
 				
 			
 			var mz;
