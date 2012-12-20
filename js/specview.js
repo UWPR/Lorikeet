@@ -1268,7 +1268,7 @@
 
 		// placeholders for the ms/ms plot
 		parentTable += '<tr> ';
-		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="middle" align="center"> ';
+		parentTable += '<td style="background-color: white; padding:5px; border:1px dotted #cccccc;" valign="top" align="center"> ';
 		parentTable += '<div id="'+getElementId(container, elementIds.msmsplot)+'" align="bottom" style="width:'+options.width+'px;height:'+options.height+'px;"></div> ';
 
 		// placeholder for viewing options (zoom, plot size etc.)
@@ -1544,22 +1544,43 @@
 		
 		if(options.variableMods && options.variableMods.length > 0) {
 			
-			var modChars = [];
-			var uniqvarmods = [];
+			var uniqVarMods = {};
 			for(var i = 0; i < options.variableMods.length; i += 1) {
 				var mod = options.variableMods[i];
-				if(modChars[mod.aa.code])
-					continue;
-				modChars[mod.aa.code] = 1;
-				uniqvarmods.push(mod);
+                var varmods = uniqVarMods[mod.aa.code + ' ' + mod.modMass];
+				if(!varmods)
+                {
+					varmods = [];
+                    uniqVarMods[mod.aa.code + ' ' + mod.modMass] = varmods;
+                }
+				varmods.push(mod);
 			}  
-			
+
+            var keys = [];
+            for(var key in uniqVarMods)
+            {
+                if(uniqVarMods.hasOwnProperty(key))
+                {
+                    keys.push(key);
+                }
+            }
+            keys.sort();
+
 			modInfo += '<div style="margin-top:5px;">';
 			modInfo += 'Variable Modifications: ';
-			for(var i = 0; i < uniqvarmods.length; i += 1) {
-				var mod = uniqvarmods[i];
-				//if(i > 0) modInfo += ', ';
-				modInfo += "<div><b>"+mod.aa.code+": "+mod.modMass+"</b></div>";
+			for(var i in keys) {
+				var varmods = uniqVarMods[keys[i]];
+                modInfo += "<div><b>"
+                modInfo += varmods[0].aa.code+": "+varmods[0].modMass;
+                modInfo += "</b> [";
+                for(var i = 0; i < varmods.length; i++)
+                {
+                    if(i != 0)
+                        modInfo += ", ";
+                    modInfo += varmods[i].position;
+                }
+                modInfo += "]";
+                modInfo += "</div>";
 			}
 			modInfo += '</div>';
 		}
