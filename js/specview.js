@@ -138,7 +138,8 @@
             showModInfo(container, options);
         }
 
-
+        // trim any 0 intensity peaks from the end of the peaks array
+        trimPeaksArray(options);
         createPlot(container, getDatasets(container)); // Initial MS/MS Plot
 
         if(options.ms1peaks && options.ms1peaks.length > 0) {
@@ -214,6 +215,25 @@
 
         if(options.showIonTable) {
             makeIonTable(container);
+        }
+    }
+
+    // trim any 0 intensity peaks from the end of the ms/ms peaks array
+    function trimPeaksArray(options)
+    {
+        var peaksLength = options.peaks.length;
+        var lastNonZeroIntensityPeakIndex = peaksLength - 1;
+        for(var i = peaksLength - 1; i >= 0; i--)
+        {
+            if(options.peaks[i][1] != 0.0)
+            {
+                lastNonZeroIntensityPeakIndex = i;
+                break;
+            }
+        }
+        if(lastNonZeroIntensityPeakIndex < peaksLength - 1)
+        {
+            options.peaks.splice(lastNonZeroIntensityPeakIndex+1, peaksLength - lastNonZeroIntensityPeakIndex);
         }
     }
 
