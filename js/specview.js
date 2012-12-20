@@ -23,7 +23,7 @@
                 precursorPeaks: null,
                 precursorPeakClickFn: null,
                 zoomMs1: false,
-                width: 750, 	// width of the ms/ms plot
+                width: 700, 	// width of the ms/ms plot
                 height: 450, 	// height of the ms/ms plot
                 massError: 0.5, // mass tolerance for labeling peaks
                 extraPeakSeries:[],
