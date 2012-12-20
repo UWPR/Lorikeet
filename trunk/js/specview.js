@@ -10,6 +10,7 @@
                 charge: null,
                 fragmentMassType: 'mono',
                 precursorMassType: 'mono',
+                calculatedMz: null,
                 precursorMz: null,
                 precursorIntensity: null,
                 staticMods: [],
@@ -119,6 +120,13 @@
                                 options.ntermMod, options.ctermMod);
         options.peptide = peptide;
 
+        // Calculate a theoretical m/z from the given sequence and charge
+        if(options.sequence && options.charge) {
+            var mass = options.peptide.getNeutralMassMono();
+            options.calculatedMz = Ion.getMz(mass, options.charge);
+        }
+
+
         var container = createContainer(parent_container);
         // alert(container.attr('id')+" parent "+container.parent().attr('id'));
         storeContainerData(container, options);
@@ -144,18 +152,7 @@
 
         if(options.ms1peaks && options.ms1peaks.length > 0) {
 
-            var precursorMz;
-
-            // If we are given a precursor m/z use it
-            if(options.precursorMz) {
-                precursorMz = options.precursorMz;
-            }
-            // Otherwise calculate a theoretical m/z from the given sequence and charge
-            else if(options.sequence && options.charge) {
-                var mass = options.peptide.getNeutralMassMono();
-                precursorMz = Ion.getMz(mass, options.charge);
-                options.precursorMz = precursorMz;
-            }
+            var precursorMz = options.precursorMz;
 
             if(precursorMz)
             {
@@ -174,7 +171,7 @@
                 }
                 if(diff <= 0.5) {
                     options.precursorIntensity = y;
-                    // TODO: Add this peak to options.precursors ?
+                    options.precursorPeaks.push([x,y]);
                 }
 
                 // Determine a zoom range
@@ -269,7 +266,7 @@
                         autoHighlight: false,
                         borderWidth: 1,
                         labelMargin: 1},
-                xaxis: { tickLength: 3, tickColor: "#000" },
+                xaxis: { tickLength: 3, tickColor: "#000"},
                 yaxis: { tickLength: 0, tickColor: "#000",
                         tickFormatter: function(val, axis) {return Math.round((val * 100)/maxInt)+"%";}}
 	        }
@@ -341,7 +338,7 @@
 		if(ms1zoomRange) {
 			ms1plotOptions.xaxis.min = ms1zoomRange.xaxis.from;
 			ms1plotOptions.xaxis.max = ms1zoomRange.xaxis.to;
-			ms1plotOptions.yaxis.min = ms1zoomRange.yaxis.from;
+			ms1plotOptions.yaxis.min = 0; // ms1zoomRange.yaxis.from;
 			ms1plotOptions.yaxis.max = ms1zoomRange.yaxis.to;
 		}
 
@@ -1500,9 +1497,6 @@
 			}
 			if(options.scanNum) {
 				fileinfo += ', Scan: '+options.scanNum;
-			}	
-			if(options.precursorMz) {
-				fileinfo += ', Precursor m/z: '+options.precursorMz;
 			}
 			if(options.charge) {
 				fileinfo += ', Charge: '+options.charge;
