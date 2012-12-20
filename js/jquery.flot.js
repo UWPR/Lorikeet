@@ -1672,9 +1672,9 @@
                 
                 ctx.fillStyle = series.color;
                 ctx.textAlign = "center";
-        		ctx.font = '14px Arial';
+        		ctx.font = '11px Arial';
         		if(series.labelType == 'mz')
-        			ctx.font = '12px Arial';
+        			ctx.font = '11px Arial';
         		
                 var incr = ps;
                 
@@ -1798,7 +1798,7 @@
 	                		ctx.save();
 	                		ctx.translate(myx, myy2)
 	                		ctx.rotate(-90 * Math.PI/180);
-	                		ctx.fillText(label, (metrics.width / 2)+1 ,3);
+	                		ctx.fillText(label, (metrics.width / 2)+4 ,3);
 	                		ctx.restore();
                 		}
             		}
