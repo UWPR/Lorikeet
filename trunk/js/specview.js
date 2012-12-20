@@ -8,6 +8,8 @@
                 scanNum: null,
                 fileName: null,
                 charge: null,
+                fragmentMassType: 'mono',
+                precursorMassType: 'mono',
                 precursorMz: null,
                 precursorIntensity: null,
                 staticMods: [],
@@ -421,7 +423,7 @@
     		if($(getElementSelector(container, elementIds.zoom_x)).is(":checked"))
     			selectOpts.xaxis = { min: zoomRange.xaxis.from, max: zoomRange.xaxis.to };
     		if($(getElementSelector(container, elementIds.zoom_y)).is(":checked"))
-    			selectOpts.yaxis = { min: zoomRange.yaxis.from, max: zoomRange.yaxis.to };
+    			selectOpts.yaxis = { min: 0, max: zoomRange.yaxis.to };
     		
     		plot = $.plot(getElementSelector(container, elementIds.msmsplot), datasets,
                       $.extend(true, {}, container.data("plotOptions"), selectOpts));
@@ -1424,8 +1426,10 @@
 			
 			var neutralMass = 0;
 			
-			// Always use avg mass for full peptide sequence
-		    neutralMass = options.peptide.getNeutralMassAvg();
+			if(options.precursorMassType == 'mono')
+               neutralMass = options.peptide.getNeutralMassMono();
+            else
+		        neutralMass = options.peptide.getNeutralMassAvg();
 				
 			
 			var mz;
@@ -1673,8 +1677,14 @@
 		myTable += '<tr><td class="optionCell"> ';
 		myTable += '<div> Mass Type:<br/> ';
 		myTable += '<nobr> ';
-		myTable += '<input type="radio" name="'+getRadioName(container, "massTypeOpt")+'" value="mono" checked="checked"/><span style="font-weight: bold;">Mono</span> ';
-		myTable += '<input type="radio" name="'+getRadioName(container, "massTypeOpt")+'" value="avg"/><span style="font-weight: bold;">Avg</span> ';
+		myTable += '<input type="radio" name="'+getRadioName(container, "massTypeOpt")+'" value="mono"';
+        if(options.fragmentMassType == 'mono')
+            myTable += ' checked = "checked" ';
+        myTable += '/><span style="font-weight: bold;">Mono</span> ';
+		myTable += '<input type="radio" name="'+getRadioName(container, "massTypeOpt")+'" value="avg"';
+        if(options.fragmentMassType == 'avg')
+            myTable += ' checked = "checked" ';
+        myTable += '/><span style="font-weight: bold;">Avg</span> ';
 		myTable += '</nobr> ';
 		myTable += '</div> ';
 		myTable += '<div style="margin-top:10px;"> ';
