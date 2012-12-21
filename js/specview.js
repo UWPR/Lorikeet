@@ -95,6 +95,9 @@
 
     function init(parent_container, options) {
 
+        // trim any 0 intensity peaks from the end of the peaks array
+        trimPeaksArray(options);
+
         // read the static modifications
         var parsedStaticMods = [];
         for(var i = 0; i < options.staticMods.length; i += 1) {
@@ -146,8 +149,6 @@
             showModInfo(container, options);
         }
 
-        // trim any 0 intensity peaks from the end of the peaks array
-        trimPeaksArray(options);
         createPlot(container, getDatasets(container)); // Initial MS/MS Plot
 
         if(options.ms1peaks && options.ms1peaks.length > 0) {
@@ -274,6 +275,7 @@
                          min: options.peaks[0][0] - 25,
                          max: options.peaks[options.peaks.length - 1][0] + 25},
                 yaxis: { tickLength: 0, tickColor: "#000",
+                         max: maxInt*1.1,
                          ticks: [0, maxInt*0.1, maxInt*0.2, maxInt*0.3, maxInt*0.4, maxInt*0.5,
                                  maxInt*0.6, maxInt*0.7, maxInt*0.8, maxInt*0.9, maxInt],
                          tickFormatter: function(val, axis) {return Math.round((val * 100)/maxInt)+"%";}}
@@ -1570,20 +1572,23 @@
 
 			modInfo += '<div style="margin-top:5px;">';
 			modInfo += 'Variable Modifications: ';
+            modInfo += "<table class='varModsTable'>";
 			for(var i in keys) {
 				var varmods = uniqVarMods[keys[i]];
-                modInfo += "<div><b>"
+                modInfo += "<tr><td><span style='font-weight: bold;'>";
                 modInfo += varmods[0].aa.code+": "+varmods[0].modMass;
-                modInfo += "</b> [";
+                modInfo += "</span></td>";
+                modInfo += "<td>[";
                 for(var i = 0; i < varmods.length; i++)
                 {
                     if(i != 0)
                         modInfo += ", ";
                     modInfo += varmods[i].position;
                 }
-                modInfo += "]";
-                modInfo += "</div>";
+                modInfo += "]</td>";
+                modInfo += "</tr>";
 			}
+            modInfo += "</table>";
 			modInfo += '</div>';
 		}
 		
