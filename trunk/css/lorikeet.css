@@ -100,6 +100,17 @@ div.lorikeet .ionTable td.matchIon {
 }
       
 
+/* THE FOLLOWING STYLES ARE FOR THE TABLE DISPLAYING VARIABLE MODIFICATIONS */
+div.lorikeet .varModsTable {
+    border-collapse:collapse;
+}
+
+div.lorikeet .varModsTable td {
+	border: 0px;
+	text-align: left;
+	font-size: 10pt;
+    padding: 1px 5px 1px 0px;
+}
 
 /*
  * THE FOLLOWING STYLES ARE FOR THE SLIDERS CONTROLLING THE PLOT SIZE
