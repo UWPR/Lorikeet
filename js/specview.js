@@ -259,6 +259,10 @@
         container.data("massError", options.massError);
 
         var maxInt = getMaxInt(options);
+        var xmin = options.peaks[0][0];
+        var xmax = options.peaks[options.peaks.length - 1][0];
+        var padding = (xmax - xmin) * 0.025;
+        // console.log("x-axis padding: "+padding);
         var plotOptions =  {
                 series: {
                     peaks: { show: true, lineWidth: 1, shadowSize: 0},
@@ -272,8 +276,8 @@
                         borderWidth: 1,
                         labelMargin: 1},
                 xaxis: { tickLength: 3, tickColor: "#000",
-                         min: options.peaks[0][0] - 25,
-                         max: options.peaks[options.peaks.length - 1][0] + 25},
+                         min: xmin - padding,
+                         max: xmax + padding},
                 yaxis: { tickLength: 0, tickColor: "#000",
                          max: maxInt*1.1,
                          ticks: [0, maxInt*0.1, maxInt*0.2, maxInt*0.3, maxInt*0.4, maxInt*0.5,
