@@ -171,6 +171,10 @@
                 }
                 if(diff <= 0.5) {
                     options.precursorIntensity = y;
+                    if(!options.precursorPeaks)
+                    {
+                        options.precursorPeaks = [];
+                    }
                     options.precursorPeaks.push([x,y]);
                 }
 
@@ -266,9 +270,13 @@
                         autoHighlight: false,
                         borderWidth: 1,
                         labelMargin: 1},
-                xaxis: { tickLength: 3, tickColor: "#000"},
+                xaxis: { tickLength: 3, tickColor: "#000",
+                         min: options.peaks[0][0] - 25,
+                         max: options.peaks[options.peaks.length - 1][0] + 25},
                 yaxis: { tickLength: 0, tickColor: "#000",
-                        tickFormatter: function(val, axis) {return Math.round((val * 100)/maxInt)+"%";}}
+                         ticks: [0, maxInt*0.1, maxInt*0.2, maxInt*0.3, maxInt*0.4, maxInt*0.5,
+                                 maxInt*0.6, maxInt*0.7, maxInt*0.8, maxInt*0.9, maxInt],
+                         tickFormatter: function(val, axis) {return Math.round((val * 100)/maxInt)+"%";}}
 	        }
         container.data("plotOptions", plotOptions);
         container.data("maxInt", maxInt);
