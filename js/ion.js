@@ -1,3 +1,7 @@
+// $LastChangedDate$
+// $LastChangedBy$
+// $LastChangedRevision$
+
 function Ion (t, color, charge, terminus) {
 	this.type = t;
 	this.color = color;
