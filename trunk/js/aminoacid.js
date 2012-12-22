@@ -1,3 +1,7 @@
+// $LastChangedDate$
+// $LastChangedBy$
+// $LastChangedRevision$
+
 function AminoAcid(aaCode, aaShortName, aaName, monoMass, avgMass) {
    this.code = aaCode;
    this.shortName = aaShortName;
