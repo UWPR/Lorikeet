@@ -14,6 +14,7 @@
                 charge: null,
                 fragmentMassType: 'mono',
                 precursorMassType: 'mono',
+                peakDetect: true,
                 calculatedMz: null,
                 precursorMz: null,
                 precursorIntensity: null,
@@ -82,7 +83,7 @@
             ionTable: "ionTable",
             fileinfo: "fileinfo",
             seqinfo: "seqinfo",
-            removeNoise: "removeNoise"
+            peakDetect: "peakDetect"
 	};
 
     function getElementId(container, elementId){
@@ -556,7 +557,7 @@
 	    	container.data("massTypeChanged", true);
 	    	plotAccordingToChoices(container);
 	    });
-        $(getElementSelector(container, elementIds.removeNoise)).click(function() {
+        $(getElementSelector(container, elementIds.peakDetect)).click(function() {
             container.data("peakAssignmentTypeChanged", true);
             plotAccordingToChoices(container);
         });
@@ -1147,10 +1148,10 @@
     {
         var options = container.data("options");
 
-        if($(getElementSelector(container, elementIds.removeNoise)).is(":checked"))
+        if($(getElementSelector(container, elementIds.peakDetect)).is(":checked"))
         {
             if(options.sparsePeaks == null) {
-                calculateSparsePeaks(container);
+                doPeakDetection(container);
             }
             return options.sparsePeaks;
         }
@@ -1160,7 +1161,7 @@
         }
     }
 
-    function calculateSparsePeaks(container) {
+    function doPeakDetection(container) {
 
         // console.log("calculating sparse peaks");
 
@@ -1179,8 +1180,13 @@
             var totalIntensity = intensity;
             var peakCount = 1;
             // sum up the intensities in the +/- 50Da window of this peak
+            var maxIntensity = intensity;
             while((minMz >= mz - 50.0) && j >= 0)
             {
+                if(peaks[j][1] > maxIntensity)
+                {
+                    maxIntensity = peaks[j][1];
+                }
                 totalIntensity += peaks[j][1];
                 minMz = peaks[j][0];
                 j -= 1;
@@ -1189,6 +1195,10 @@
             j = i+1;
             while(maxMz <= mz + 50.0 && j < peaks.length)
             {
+                if(peaks[j][1] > maxIntensity)
+                {
+                    maxIntensity = peaks[j][1];
+                }
                 totalIntensity += peaks[j][1];
                 maxMz = peaks[j][0];
                 j += 1;
@@ -1196,30 +1206,37 @@
             }
 
             var mean = totalIntensity / peakCount;
-
-            // calculate the standard deviation
-            var sdev = 0;
-            j = i - 1;
-            while((minMz >= mz - 50.0) && j >= 0)
-            {
-                sdev += Math.pow((peaks[j][1] - mean), 2);
-                minMz = peaks[j][0];
-                j -= 1;
-            }
-            j = i+1;
-            while(maxMz <= mz + 50.0 && j < peaks.length)
-            {
-                sdev += Math.pow((peaks[j][1] - mean), 2);
-                maxMz = peaks[j][0];
-                j += 1;
-            }
-            sdev = Math.sqrt(sdev / peakCount);
-
-            if(intensity >= mean + 2 * sdev)
+            if(peakCount <= 10 && intensity == maxIntensity)
             {
                 sparsePeaks.push(peak);
             }
-            //console.log(intensity+"  "+mean+"  "+sdev);
+
+            else
+            {
+                // calculate the standard deviation
+                var sdev = 0;
+                j = i - 1;
+                while((minMz >= mz - 50.0) && j >= 0)
+                {
+                    sdev += Math.pow((peaks[j][1] - mean), 2);
+                    minMz = peaks[j][0];
+                    j -= 1;
+                }
+                j = i+1;
+                while(maxMz <= mz + 50.0 && j < peaks.length)
+                {
+                    sdev += Math.pow((peaks[j][1] - mean), 2);
+                    maxMz = peaks[j][0];
+                    j += 1;
+                }
+                sdev = Math.sqrt(sdev / peakCount);
+
+                if(intensity >= mean + 2 * sdev)
+                {
+                    sparsePeaks.push(peak);
+                }
+                //console.log(intensity+"  "+mean+"  "+sdev);
+            }
 		}
         // console.log("Sparse Peak count: "+sparsePeaks.length);
         // console.log("All Peaks count: "+peaks.length);
@@ -1756,7 +1773,12 @@
 		myTable+= '<div> Peak Assignment:<br/> ';
 		myTable+= '<input type="radio" name="'+getRadioName(container, "peakAssignOpt")+'" value="intense" checked="checked"/><span style="font-weight: bold;">Most Intense</span><br/> ';
 		myTable+= '<input type="radio" name="'+getRadioName(container, "peakAssignOpt")+'" value="close"/><span style="font-weight: bold;">Nearest Match</span><br/> ';
-        myTable+= '<input type="checkbox" value="true" checked="checked" id="'+getElementId(container, elementIds.removeNoise)+'"/><span style="font-weight:bold;">Peak Detect</span>';
+        myTable+= '<input type="checkbox" value="true" ';
+        if(options.peakDetect == true)
+        {
+            myTable+=checked="checked"
+        }
+        myTable+= ' id="'+getElementId(container, elementIds.peakDetect)+'"/><span style="font-weight:bold;">Peak Detect</span>';
 		myTable+= '</div> ';
 		myTable += '</td> </tr> ';
 		
