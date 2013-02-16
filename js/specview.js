@@ -1598,8 +1598,8 @@
 			modInfo += '<div style="margin-top:5px;">';
 			modInfo += 'Variable Modifications: ';
             modInfo += "<table class='varModsTable'>";
-			for(var i in keys) {
-				var varmods = uniqVarMods[keys[i]];
+			for(var k = 0; k < keys.length; k++) {
+				var varmods = uniqVarMods[keys[k]];
                 modInfo += "<tr><td><span style='font-weight: bold;'>";
                 modInfo += varmods[0].aa.code+": "+varmods[0].modMass;
                 modInfo += "</span></td>";
