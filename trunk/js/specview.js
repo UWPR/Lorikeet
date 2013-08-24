@@ -1029,6 +1029,44 @@
 		return dataSeries;
 	}
 
+		function getNeutralLosses(container) {
+			var neutralLosses = [];
+			$(getElementSelector(container, elementIds.nl_choice)).find("input:checked").each(function() {
+				neutralLosses.push($(this).val());
+			});
+			neutralLosses.push(null); // Always calculate base ions without neutral loss applied.
+			return neutralLosses;
+		}
+
+		function matchLabel(sion, neutralLoss) {
+			var label = sion.label;
+			if(neutralLoss) {
+				if(neutralLoss == 'h2o') {
+					label += 'o';
+				}
+				else if(neutralLoss = 'nh3') {
+					label += '*';
+				}
+			}
+			return label;
+		}
+
+		function ionMz(sion, neutralLoss) {
+			var ionmz;
+			if(!neutralLoss)
+				ionmz = sion.mz;
+			else {
+				if(neutralLoss == 'h2o') {
+					ionmz = Ion.getWaterLossMz(sion);
+				}
+				else if(neutralLoss = 'nh3') {
+					ionmz = Ion.getAmmoniaLossMz(sion);
+				}
+			}
+			return ionmz;
+		}
+
+
 	function calculateMatchingPeaks(container, ionSeries, allPeaks, massTolerance, peakAssignmentType) {
 
         // console.log("calculating matching peaks");
@@ -1038,20 +1076,18 @@
 		matchData[0] = []; // peaks
 		matchData[1] = []; // labels -- ions;
 		
-		var neutralLosses = [];
-		$(getElementSelector(container, elementIds.nl_choice)).find("input:checked").each(function() {
-			neutralLosses.push($(this).val());
-		});
+		var neutralLosses = getNeutralLosses(container);
 		for(var i = 0; i < ionSeries.length; i += 1) {
 			
 			var sion = ionSeries[i];
 			
 			// get match for water and or ammonia loss
 			for(var n = 0; n < neutralLosses.length; n += 1) {
-				getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, peakAssignmentType, neutralLosses[n]);
+				var index = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, peakAssignmentType, neutralLosses[n]);
+				if(neutralLosses[n] == null) {
+					peakIndex = index;
+				}
 			}
-			// get match for the ion
-			peakIndex = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, peakAssignmentType);
 		}
 		
 		return matchData;
@@ -1067,21 +1103,11 @@
 		var bestPeak = null;
 		if(!neutralLoss)
 			sion.match = false; // reset;
-		var ionmz;
-		if(!neutralLoss)
-			ionmz = sion.mz;
-		else {
-			if(neutralLoss == 'h2o') {
-				ionmz = Ion.getWaterLossMz(sion);
-			}
-			else if(neutralLoss = 'nh3') {
-				ionmz = Ion.getAmmoniaLossMz(sion);
-			}
-		}
+		var ionmz = ionMz(sion, neutralLoss);
 		var bestDistance;
 		
 		for(var j = peakIndex; j < allPeaks.length; j += 1) {
-			
+			 
 			var peak = allPeaks[j];
 			
 			// peak is before the current ion we are looking at
@@ -1095,17 +1121,9 @@
 				if(bestPeak) {
 					//console.log("found match "+sion.label+", "+ionmz+";  peak: "+bestPeak[0]);
 					matchData[0].push([bestPeak[0], bestPeak[1]]);
+					matchData[1].push(matchLabel(sion, neutralLoss));
 					if(!neutralLoss) {
-						matchData[1].push(sion.label);
 						sion.match = true;
-					}
-					else {
-						if(neutralLoss == 'h2o') {
-							matchData[1].push(sion.label+'o');
-						}
-						else if(neutralLoss = 'nh3') {
-							matchData[1].push(sion.label+'*');
-						}
 					}
 				}
 				peakIndex = j;
