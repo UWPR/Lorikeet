@@ -39,27 +39,7 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
     // If this is a C-term sequence we will sum up the mass of the amino acids in the sequence starting from index (inclusive)
     // modification masses are added
     this.getSeqMassMono = function _seqMassMono(index, term) {
-
-        var mass = 0;
-        var aa_obj = new AminoAcid();
-        if(sequence) {
-            if(term == "n") {
-                for( var i = 0; i < index; i += 1) {
-                    var aa = aa_obj.get(sequence.charAt(i));
-                    mass += aa.mono;
-                }
-            }
-            if (term == "c") {
-                for( var i = index; i < sequence.length; i += 1) {
-                    var aa = aa_obj.get(sequence.charAt(i));
-                    mass += aa.mono;
-                }
-            }
-        }
-
-        mass = _addTerminalModMass(mass, term);
-        mass = _addResidueModMasses(mass, index, term);
-        return mass;
+        return _getSeqMass(index, term, "mono");
     }
 
 
@@ -68,27 +48,7 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
     // If this is a C-term sequence we will sum up the mass of the amino acids in the sequence starting from index (inclusive)
     // modification masses are added
     this.getSeqMassAvg = function _seqMassAvg(index, term) {
-
-        var mass = 0;
-        var aa_obj = new AminoAcid();
-        if(sequence) {
-            if(term == "n") {
-                for( var i = 0; i < index; i += 1) {
-                    var aa = aa_obj.get(sequence[i]);
-                    mass += aa.avg;
-                }
-            }
-            if (term == "c") {
-                for( var i = index; i < sequence.length; i += 1) {
-                    var aa = aa_obj.get(sequence[i]);
-                    mass += aa.avg;
-                }
-            }
-        }
-
-        mass = _addTerminalModMass(mass, term);
-        mass = _addResidueModMasses(mass, index, term);
-        return mass;
+        return _getSeqMass(index, term, "avg");
     }
 
     // Returns the monoisotopic neutral mass of the peptide; modifications added. N-term H and C-term OH are added
@@ -140,42 +100,37 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
     function _addResidueModMasses(seqMass, index, term) {
 
         var mass = seqMass;
-
-        // add any static modifications
-        if(term == "n") {
-            for(var i = 0; i < index; i += 1) {
-                var mod = staticMods[sequence.charAt(i)];
-                if(mod) {
-                    mass += mod.modMass;
-                }
+        var slice = new _Slice(index, term);
+        for( var i = slice.from; i < slice.to; i += 1) {
+            // add any static modifications
+            var mod = staticMods[sequence.charAt(i)];
+            if(mod) {
+                mass += mod.modMass;
             }
-        }
-        if(term == "c") {
-            for(var i = index; i < sequence.length; i += 1) {
-                var mod = staticMods[sequence.charAt(i)];
-                if(mod) {
-                    mass += mod.modMass;
-                }
+            // add any variable modifications
+            mod = varMods[i+1]; // varMods index in the sequence is 1-based
+            if(mod) {
+                mass += mod.modMass;
             }
         }
 
-        // add any variable modifications
-        if(term == "n") {
-            for(var i = 0; i < index; i += 1) {
-                var mod = varMods[i+1]; // varMods index in the sequence is 1-based
-                if(mod) {
-                    mass += mod.modMass;
-                }
+        return mass;
+    }
+
+    function _getSeqMass(index, term, massType) {
+
+        var mass = 0;
+        var aa_obj = new AminoAcid();
+        if(sequence) {
+            var slice = new _Slice(index, term);
+            for( var i = slice.from; i < slice.to; i += 1) {
+                var aa = aa_obj.get(sequence[i]);
+                mass += aa[massType];
             }
         }
-        if(term == "c") {
-            for(var i = index; i < sequence.length; i += 1) {
-                var mod = varMods[i+1]; // varMods index in the sequence is 1-based
-                if(mod) {
-                    mass += mod.modMass;
-                }
-            }
-        }
+
+        mass = _addTerminalModMass(mass, term);
+        mass = _addResidueModMasses(mass, index, term);
         return mass;
     }
 
@@ -192,7 +147,19 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         return mass;
     }
 
+    function _Slice(index, term) {
+        if(term == "n") {
+            this.from = 0;
+            this.to = index;
+        }
+        if(term == "c") {
+            this.from = index;
+            this.to = sequence.length;
+        }
+    }
 }
+
+
 //-----------------------------------------------------------------------------
 // Modification
 //-----------------------------------------------------------------------------
