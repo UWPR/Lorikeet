@@ -79,11 +79,15 @@ Ion.getSeriesColor = function _getSeriesColor(ion) {
 //-----------------------------------------------------------------------------
 // Ion Series
 //-----------------------------------------------------------------------------
-var MASS_H_1 = 1.00782503207;  	// H(1)  Source: http://en.wikipedia.org/wiki/Isotopes_of_hydrogen
-var MASS_C_12 = 12.0;           // C(12) Source: http://en.wikipedia.org/wiki/Isotopes_of_carbon
-var MASS_N_14 = 14.0030740048;  // N(14) Source: http://en.wikipedia.org/wiki/Isotopes_of_nitrogen
-var MASS_O_16 = 15.99491461956; // O(16) Source: http://en.wikipedia.org/wiki/Isotopes_of_oxygen
+var MASS_H_1 = 1.00782503207;  	 // H(1)  Source: http://en.wikipedia.org/wiki/Isotopes_of_hydrogen
+var MASS_C_12 = 12.0;            // C(12) Source: http://en.wikipedia.org/wiki/Isotopes_of_carbon
+var MASS_C_13 = 13.0033548378;   // C(13) Source: http://en.wikipedia.org/wiki/Isotopes_of_carbon
+var MASS_N_14 = 14.0030740048;   // N(14) Source: http://en.wikipedia.org/wiki/Isotopes_of_nitrogen
+var MASS_N_15 = 15.0001088982;   // N(15) Source: http://en.wikipedia.org/wiki/Isotopes_of_nitrogen
+var MASS_O_16 = 15.99491461956;  // O(16) Source: http://en.wikipedia.org/wiki/Isotopes_of_oxygen
+var MASS_O_18 = 17.9991610;      // O(18) Source: http://en.wikipedia.org/wiki/Isotopes_of_oxygen
 
+// average masses
 var MASS_H = 1.00782504; // Source: http://en.wikipedia.org/wiki/Isotopes_of_hydrogen
 var MASS_C = 12.0107;    // Source: http://en.wikipedia.org/wiki/Isotopes_of_carbon
 var MASS_N = 14.0067;	 // Source: http://en.wikipedia.org/wiki/Isotopes_of_nitrogen
@@ -98,8 +102,11 @@ Ion.MASS_N = MASS_N;
 Ion.MASS_O = MASS_O;
 Ion.MASS_H_1 = MASS_H_1;
 Ion.MASS_C_12 = MASS_C_12;
+Ion.MASS_C_13 = MASS_C_13;
 Ion.MASS_N_14 = MASS_N_14;
+Ion.MASS_N_15 = MASS_N_15;
 Ion.MASS_O_16 = MASS_O_16;
+Ion.MASS_O_18 = MASS_O_18;
 
 // massType can be "mono" or "avg"
 Ion.getSeriesIon = function _getSeriesIon(ion, peptide, idxInSeq, massType) {
@@ -128,19 +135,25 @@ function _getMz(neutralMass, charge) {
 	return ( neutralMass + (charge * MASS_PROTON) ) / charge;
 }
 
-function _getWaterLossMz(sion) {
-	var neutralMass = (sion.mz * sion.charge) - (sion.charge * MASS_PROTON);
-	return _getMz((neutralMass - (MASS_H * 2 + MASS_O)), sion.charge);
-}
+Ion.AmmoniaLossMass_mono = MASS_H_1 * 3 + MASS_N_14;
+Ion.AmmoniaLossMass_avg = MASS_H * 3 + MASS_N;
+Ion.WaterLossMass_mono = MASS_H_1 * 2 + MASS_O_16;
+Ion.WaterLossMass_avg = MASS_H * 2 + MASS_O;
 
-function _getAmmoniaLossMz(sion) {
+
+function _getIonMzWithLoss(sion, neutralLosses, massType) {
 	var neutralMass = (sion.mz * sion.charge) - (sion.charge * MASS_PROTON);
-	return _getMz((neutralMass - (MASS_H * 3 + MASS_N)), sion.charge);
+    var lossMass = 0;
+    if(neutralLosses)
+    {
+        if(massType == 'mono') lossMass += neutralLosses.getTotalLossMass('mono');
+        else if(massType == 'avg') lossMass += neutralLosses.getTotalLossMass('avg');
+    }
+	return _getMz((neutralMass - lossMass), sion.charge);
 }
 
 Ion.getMz = _getMz;
-Ion.getWaterLossMz = _getWaterLossMz;
-Ion.getAmmoniaLossMz = _getAmmoniaLossMz;
+Ion.getIonMzWithLoss = _getIonMzWithLoss;
 
 function Ion_A (peptide, endIdxPlusOne, charge, massType) {
 	// Neutral mass:  	 [N]+[M]-CHO  ; N = mass of neutral N terminal group
@@ -151,7 +164,8 @@ function Ion_A (peptide, endIdxPlusOne, charge, massType) {
 		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n") - (MASS_C + MASS_O);
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-	this.label = _makeIonLabel("a",endIdxPlusOne, charge);
+    this.fragmentIndex = endIdxPlusOne;
+	this.label = _makeIonLabel("a",this.fragmentIndex, charge);
 	this.match = false;
 	this.term = "n";
 	return this;
@@ -166,7 +180,8 @@ function Ion_B (peptide, endIdxPlusOne, charge, massType) {
 		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n");
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-	this.label = _makeIonLabel("b", endIdxPlusOne, charge);
+    this.fragmentIndex = endIdxPlusOne;
+	this.label = _makeIonLabel("b", this.fragmentIndex, charge);
 	this.match = false;
 	this.term = "n";
 	return this;
@@ -181,7 +196,8 @@ function Ion_C (peptide, endIdxPlusOne, charge, massType) {
 		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n") + MASS_H + (MASS_N + 2*MASS_H);
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-	this.label = _makeIonLabel("c", endIdxPlusOne, charge);
+    this.fragmentIndex = endIdxPlusOne;
+	this.label = _makeIonLabel("c", this.fragmentIndex, charge);
 	this.match = false;
 	this.term = "n";
 	return this;
@@ -196,7 +212,8 @@ function Ion_X (peptide, startIdx, charge, massType) {
 		mass = peptide.getSeqMassAvg(startIdx, "c") + 2*MASS_O + MASS_C;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-	this.label = _makeIonLabel("x", peptide.sequence().length - startIdx, charge);
+    this.fragmentIndex = peptide.sequence().length - startIdx;
+	this.label = _makeIonLabel("x", this.fragmentIndex, charge);
 	this.match = false;
 	this.term = "c";
 	return this;
@@ -211,7 +228,8 @@ function Ion_Y (peptide, startIdx, charge, massType) {
 		mass = peptide.getSeqMassAvg(startIdx, "c") + 2*MASS_H + MASS_O;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-    this.label = _makeIonLabel("y", peptide.sequence().length - startIdx, charge);
+    this.fragmentIndex = peptide.sequence().length - startIdx;
+    this.label = _makeIonLabel("y", this.fragmentIndex, charge);
 	this.match = false;
 	this.term = "c";
 	return this;
@@ -227,7 +245,8 @@ function Ion_Z (peptide, startIdx, charge, massType) {
 		mass = peptide.getSeqMassAvg(startIdx, "c") + MASS_O - MASS_N;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-	this.label = _makeIonLabel("z", peptide.sequence().length - startIdx, charge);
+    this.fragmentIndex = peptide.sequence().length - startIdx;
+	this.label = _makeIonLabel("z", this.fragmentIndex, charge);
 	this.match = false;
 	this.term = "c";
 	return this;
