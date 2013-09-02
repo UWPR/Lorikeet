@@ -134,8 +134,11 @@ test("getWaterLossMz", function() {
     }
     var neutralMass = (100.0 * 2) - (2 * Ion.MASS_PROTON);
     var mass = neutralMass - (Ion.MASS_H * 2 + Ion.MASS_O);
-    var expectedMz = (mass + (2 * Ion.MASS_PROTON)) / 2;
-    equal(Ion.getWaterLossMz(example()), expectedMz);
+    var expectedMz = (mass + (2 * Ion.MASS_PROTON)) / 2
+    var waterLoss = NeutralLoss.WaterLoss();
+    var lossCombination = new LossCombination();
+    lossCombination.addLoss(waterLoss);
+    equal(Ion.getIonMzWithLoss(example(), lossCombination, 'avg'), expectedMz);
 });
 
 test("getAmmoniaLossMz", function() {
@@ -147,6 +150,9 @@ test("getAmmoniaLossMz", function() {
     var neutralMass = (50.0 * 3) - (3 * Ion.MASS_PROTON);
     var mass = neutralMass - (Ion.MASS_H * 3 + Ion.MASS_N);
     var expectedMz = (mass + (3 * Ion.MASS_PROTON)) / 3;
-    equal(Ion.getAmmoniaLossMz(example()), expectedMz);
+    var ammoniaLoss = NeutralLoss.AmmoniaLoss();
+    var lossCombination = new LossCombination();
+    lossCombination.addLoss(ammoniaLoss);
+    equal(Ion.getIonMzWithLoss(example(), lossCombination, 'avg'), expectedMz);
 });
 
