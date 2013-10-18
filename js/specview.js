@@ -1128,18 +1128,8 @@
 				
 			// peak is beyond the current ion we are looking at
 			if(peak[0] > ionmz + massTolerance) {
-			
-				// if we found a matching peak for the current ion, save it
-				if(bestPeak) {
-					//console.log("found match "+sion.label+", "+ionmz+";  peak: "+bestPeak[0]);
-					matchData[0].push([bestPeak[0], bestPeak[1]]);
-					matchData[1].push(peakLabel);
-					if(!neutralLosses) {
-						sion.match = true;
-					}
-				}
-				peakIndex = j;
-				break;
+                peakIndex = j;
+			    break;
 			}
 				
 			// peak is within +/- massTolerance of the current ion we are looking at
@@ -1169,7 +1159,17 @@
 				}
 			}
 		}
-		
+
+        // if we found a matching peak for the current ion, save it
+        if(bestPeak) {
+            //console.log("found match "+sion.label+", "+ionmz+";  peak: "+bestPeak[0]);
+            matchData[0].push([bestPeak[0], bestPeak[1]]);
+            matchData[1].push(peakLabel);
+            if(!neutralLosses) {
+                sion.match = true;
+            }
+        }
+
 		return peakIndex;
 	}
 	
@@ -1198,39 +1198,63 @@
         var peaks = container.data("options").peaks;
         var sparsePeaks = [];
 
+        var intensities = [];
+        for(var i = 0; i < peaks.length; i+= 1)
+        {
+            intensities.push(peaks[i][1]);
+        }
+        intensities.sort(function(a,b){return b-a});
+        var max_50_intensity = intensities[Math.min(intensities.length - 1, 49)];
+
+
+        var window = 50.0;
         for(var i = 0; i < peaks.length; i += 1) {
 
 			var peak = peaks[i];
 
             var intensity = peak[1];
+
+            // If this is one of the 50 most intense peaks, add it to sparse peaks
+            if(intensity >= max_50_intensity)
+            {
+                sparsePeaks.push(peak);
+                continue;
+            }
+
             var mz = peak[0];
-            var minMz = mz;
-            var maxMz = mz;
             var j = i-1;
             var totalIntensity = intensity;
             var peakCount = 1;
             // sum up the intensities in the +/- 50Da window of this peak
             var maxIntensity = intensity;
-            while((minMz >= mz - 50.0) && j >= 0)
+            var minIndex = i;
+            var maxIndex = i;
+            while(j >= 0)
             {
+                if(peaks[j][0] < mz - window)
+                    break;
+
                 if(peaks[j][1] > maxIntensity)
                 {
                     maxIntensity = peaks[j][1];
                 }
                 totalIntensity += peaks[j][1];
-                minMz = peaks[j][0];
+                minIndex = j;
                 j -= 1;
                 peakCount += 1;
             }
             j = i+1;
-            while(maxMz <= mz + 50.0 && j < peaks.length)
+            while(j < peaks.length)
             {
+                if(peaks[j][0] > mz + window)
+                    break;
+
                 if(peaks[j][1] > maxIntensity)
                 {
                     maxIntensity = peaks[j][1];
                 }
                 totalIntensity += peaks[j][1];
-                maxMz = peaks[j][0];
+                maxIndex = j;
                 j += 1;
                 peakCount += 1;
             }
@@ -1245,19 +1269,9 @@
             {
                 // calculate the standard deviation
                 var sdev = 0;
-                j = i - 1;
-                while((minMz >= mz - 50.0) && j >= 0)
+                for(var k = minIndex; k <= maxIndex; k += 1)
                 {
-                    sdev += Math.pow((peaks[j][1] - mean), 2);
-                    minMz = peaks[j][0];
-                    j -= 1;
-                }
-                j = i+1;
-                while(maxMz <= mz + 50.0 && j < peaks.length)
-                {
-                    sdev += Math.pow((peaks[j][1] - mean), 2);
-                    maxMz = peaks[j][0];
-                    j += 1;
+                    sdev += Math.pow((peaks[k][1] - mean), 2);
                 }
                 sdev = Math.sqrt(sdev / peakCount);
 
@@ -1265,7 +1279,7 @@
                 {
                     sparsePeaks.push(peak);
                 }
-                //console.log(intensity+"  "+mean+"  "+sdev);
+                // console.log(intensity+"  "+mean+"  "+sdev);
             }
 		}
         // console.log("Sparse Peak count: "+sparsePeaks.length);

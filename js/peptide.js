@@ -433,16 +433,16 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         {
             var subseq = sequence.substring(0, i);
             var lossOpts = nterm_totalLossOptions[i];
-            console.log(subseq + " -- ");
+            _log(subseq + " -- ");
             for(var j = 1; j < lossOpts.length; j += 1)
             {
-                console.log(" -- "+j);
+                _log(" -- "+j);
                 var lossesAt_j = lossOpts[j];
                 var count = lossesAt_j.lossCombinationCount();
                 for (var k = 0; k < count; k += 1)
                 {
                     var lossCombo = lossesAt_j.getLossCombination(k);
-                    console.log("---- " + lossCombo.getLabels());
+                    _log("---- " + lossCombo.getLabels());
                 }
             }
         }
@@ -451,16 +451,16 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         {
             var subseq = sequence.substring(i, sequence.length);
             var lossOpts = cterm_totalLossOptions[i];
-            console.log(subseq + " -- ");
+            _log(subseq + " -- ");
             for(var j = 1; j < lossOpts.length; j += 1)
             {
-                console.log(" -- "+j);
+                _log(" -- "+j);
                 var lossesAt_j = lossOpts[j];
                 var count = lossesAt_j.lossCombinationCount();
                 for (var k = 0; k < count; k += 1)
                 {
                     var lossCombo = lossesAt_j.getLossCombination(k);
-                    console.log("---- " + lossCombo.getLabels());
+                    _log("---- " + lossCombo.getLabels());
                 }
             }
         }
@@ -470,12 +470,18 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         for (var i = 0; i < potentialLossesAtIndex.length; i += 1) {
             var losses = potentialLossesAtIndex[i];
             if (losses.length > 0)
-                console.log("Potential Losses at " + i + " " + sequence.charAt(i));
+                _log("Potential Losses at " + i + " " + sequence.charAt(i));
             for (var j = 0; j < losses.length; j++) {
                 var loss = losses[j];
-                console.log(loss.monoLossMass + ", " + loss.avgLossMass + ", " + loss.formula + ", " + loss.label());
+                _log(loss.monoLossMass + ", " + loss.avgLossMass + ", " + loss.formula + ", " + loss.label());
             }
         }
+    }
+
+    function _log(message)
+    {
+        if(debug)
+            console.log(message);
     }
 }
 

@@ -25,6 +25,37 @@
 
 <h1>Lorikeet Plugin Example</h1>
 
+<div>
+    Lorikeet can display custom neutral losses and multiple neutral losses per amino acid.
+    <br>
+    The default is to have one neutral loss per amino acid, but you can set it to a higher number with the
+    following option:
+    <br>
+    <pre>
+        maxNeutralLossCount: 2
+    </pre>
+    Custom potential losses at a residue can be specified in the modification options, as the losses array.
+    <br>
+    <pre>
+        staticMods: [
+                        {
+                            "modMass":0.0,
+                            "aminoAcid":"K",
+                             losses: [{monoLossMass:17.026, avgLossMass:17.03, formula: 'NH3'}]
+                        }
+                    ]
+        variableMods: [
+                        {
+                            index: 6,
+                            modMass: 80.0,
+                            aminoAcid: 'S',
+                            losses: [{monoLossMass: 97.976895625, avgLossMass: 97.995181, formula: 'H3PO4'}]
+                        }
+                    ]
+    </pre>
+</div>
+
+
 <!-- PLACE HOLDER DIV FOR THE SPECTRUM -->
 <div>Neutral Loss Spectrum</div>
 <div id="lorikeet_0"></div>
@@ -36,6 +67,7 @@ $(document).ready(function () {
     /* render the spectrum with the given options */
     $("#lorikeet_0").specview({sequence: 'DIDISSPEFK',
                                 precursorMz: 1,
+                                maxNeutralLossCount: 2,
                                 staticMods: [{"modMass":0.0,"aminoAcid":"K", losses: [{monoLossMass:17.026, avgLossMass:17.03, formula: 'NH3'}]}],
         variableMods: [
         {index: 6, modMass: 80.0, aminoAcid: 'S', losses: [{monoLossMass: 97.976895625, avgLossMass: 97.995181, formula: 'H3PO4'}] }
