@@ -671,6 +671,9 @@
 					createMs1Plot(container);
 				}
 				$(getElementSelector(container, elementIds.slider_width_val)).text(width);
+				if ( options.sizeChangeCallbackFunction ) {
+					options.sizeChangeCallbackFunction();
+				}
 			}
 		});
 		
@@ -686,6 +689,9 @@
 				$(getElementSelector(container, elementIds.msmsplot)).css({height: height});
 				plotAccordingToChoices(container);
 				$(getElementSelector(container, elementIds.slider_height_val)).text(height);
+				if ( options.sizeChangeCallbackFunction ) {
+					options.sizeChangeCallbackFunction();
+				}
 			}
 		});
 	}
@@ -1304,7 +1310,7 @@
 
         var rowspan = 2;
 
-		var parentTable = '<table cellpadding="0" cellspacing="5"> ';
+		var parentTable = '<table cellpadding="0" cellspacing="5" class="lorikeet-outer-table"> ';
 		parentTable += '<tbody> ';
 		parentTable += '<tr> ';
 
