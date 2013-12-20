@@ -164,6 +164,9 @@
         // calculate precursor peak label
         calculatePrecursorPeak(container);
 
+        // calculate immonium ions
+        calculateImmoniumIons(container);
+
         // Calculate reporter ion labels, if required
         calculateReporterIons(container);
 
@@ -523,6 +526,9 @@
 		$(getElementSelector(container, elementIds.update)).click(function() {
 			container.data("zoomRange", null); // zoom out fully
 			setMassError(container);
+            calculatePrecursorPeak(container);
+            calculateImmoniumIons(container);
+            calculateReporterIons(container);
 			createPlot(container, getDatasets(container));
 			makeIonTable(container);
 	   	});
@@ -590,6 +596,9 @@
 
 	    container.find("input[name='"+getRadioName(container, "peakAssignOpt")+"']").click(function() {
 	    	container.data("peakAssignmentTypeChanged", true);
+            calculatePrecursorPeak(container);
+            calculateImmoniumIons(container);
+            calculateReporterIons(container);
 	    	plotAccordingToChoices(container);
 	    });
 
@@ -803,7 +812,6 @@
         // add immonium ions
         if(labelImmoniumIons(container))
         {
-            calculateImmoniumIons(container);
             data.push(container.data("immoniumIons"));
         }
 
@@ -849,49 +857,46 @@
     {
         var options = container.data("options");
 
-        if(!container.data("immoniumIons"))
+        var peaks = options.peaks;
+
+        // immonium ions (70 P, 72 V, 86 I/L, 110 H, 120 F, 136 Y, 159 W)
+        var immoniumIonTypes = [{mass:70.0, aa:'P'},
+                                {mass:72.0, aa:'V'},
+                                {mass:86.0, aa:'I/L'},
+                                {mass:110.0, aa:'H'},
+                                {mass:120.0, aa:'F'},
+                                {mass:136.0, aa:'Y'},
+                                {mass:159.0, aa:'W'}]
+
+        var immoniumIonMatches = [];
+        var labels = [];
+        for(var i = 0; i < immoniumIonTypes.length; i += 1)
         {
-            var peaks = options.peaks;
-
-            // immonium ions (70 P, 72 V, 86 I/L, 110 H, 120 F, 136 Y, 159 W)
-            var immoniumIonTypes = [{mass:70.0, aa:'P'},
-                                    {mass:72.0, aa:'V'},
-                                    {mass:86.0, aa:'I/L'},
-                                    {mass:110.0, aa:'H'},
-                                    {mass:120.0, aa:'F'},
-                                    {mass:136.0, aa:'Y'},
-                                    {mass:159.0, aa:'W'}]
-
-            var immoniumIonMatches = [];
-            var labels = [];
-            for(var i = 0; i < immoniumIonTypes.length; i += 1)
+            var ion = immoniumIonTypes[i];
+            var match = getMatchingPeakForMz(container, peaks, ion.mass);
+            if(match.bestPeak)
             {
-                var ion = immoniumIonTypes[i];
-                var match = getMatchingPeakForMz(container, peaks, ion.mass);
-                if(match.bestPeak)
-                {
-                    immoniumIonMatches.push([match.bestPeak[0], match.bestPeak[1]]);
-                    labels.push(ion.aa + '-' + match.bestPeak[0].toFixed(1));
-                }
+                immoniumIonMatches.push([match.bestPeak[0], match.bestPeak[1]]);
+                labels.push(ion.aa + '-' + match.bestPeak[0].toFixed(1));
             }
-            container.data("immoniumIons", {data: immoniumIonMatches, labels: labels, color: "#008000"});
         }
+        container.data("immoniumIons", {data: immoniumIonMatches, labels: labels, color: "#008000"});
     }
 
     function calculatePrecursorPeak(container)
     {
         var options = container.data("options");
-        if(options.labelPrecursorPeak && options.precursorMz)
+        if(options.labelPrecursorPeak && options.theoreticalMz)
         {
             var peaks = options.peaks;
-            var precursorMz = options.precursorMz;
+            var precursorMz = options.theoreticalMz;
             var match = getMatchingPeakForMz(container, peaks, precursorMz);
             if(match.bestPeak)
             {
                 var label = 'M';
                 if(options.charge)
                 {
-                    for(var i = 0; i < options.charge; i += 1) label += "+"; // + options.charge + "+";
+                    for(var i = 0; i < options.charge; i += 1) label += "+";
                 }
                 container.data("precursorPeak", {data: [[match.bestPeak[0], match.bestPeak[1]]], labels: [label], color: "#ffd700"})
             }
@@ -1730,6 +1735,9 @@
 			if(options.charge) {
 				mz = Ion.getMz(neutralMass, options.charge);
 			}
+
+            // save the theoretical m/z in the options
+            options.theoreticalMz = mz;
 			
 			var mass = neutralMass + Ion.MASS_PROTON;
 			specinfo += ', MH+ '+mass.toFixed(4);
