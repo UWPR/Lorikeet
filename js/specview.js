@@ -40,7 +40,8 @@
                 showSequenceInfo: true,
                 labelImmoniumIons: true,
                 labelPrecursorPeak: true,
-                labelReporters: false
+                labelReporters: false,
+				tooltipZIndex: null
         };
 			
 	    var options = $.extend(true, {}, defaults, opts); // this is a deep copy
@@ -234,7 +235,7 @@
             setupMs1PlotInteractions(container);
         }
 
-        setupInteractions(container);
+        setupInteractions(container, options);
 
         if(options.showIonTable) {
             makeIonTable(container);
@@ -501,7 +502,7 @@
 	// -----------------------------------------------
 	// SET UP INTERACTIVE ACTIONS FOR MS/MS PLOT
 	// -----------------------------------------------
-	function setupInteractions (container) {
+	function setupInteractions (container, options) {
 
 		// ZOOMING
 	    $(getElementSelector(container, elementIds.msmsplot)).bind("plotselected", function (event, ranges) {
@@ -546,7 +547,7 @@
 	                        y = item.datapoint[1].toFixed(2);
 	                    
 	                    showTooltip(container, item.pageX, item.pageY,
-	                                "m/z: " + x + "<br>intensity: " + y);
+	                                "m/z: " + x + "<br>intensity: " + y, options);
 	                }
 	            }
 	            else {
@@ -618,7 +619,7 @@
 	    
 	    
 	    // MOVING THE ION TABLE
-	    makeIonTableMovable(container);
+	    makeIonTableMovable(container, options);
 	    
 	    // CHANGING THE PLOT SIZE
 	    makePlotResizable(container);
@@ -669,8 +670,9 @@
 		}
 	}
 	
-	function showTooltip(container, x, y, contents) {
-        $('<div id="'+getElementId(container, elementIds.msmstooltip)+'">' + contents + '</div>').css( {
+	function showTooltip(container, x, y, contents, options) {
+	
+		var tooltipCSS = {
             position: 'absolute',
             display: 'none',
             top: y + 5,
@@ -678,8 +680,15 @@
             border: '1px solid #fdd',
             padding: '2px',
             'background-color': '#F0E68C',
-            opacity: 0.80
-        }).appendTo("body").fadeIn(200);
+            opacity: 0.80 };
+			
+		if ( options.tooltipZIndex !== undefined && options.tooltipZIndex !== null ) {
+		
+			tooltipCSS["z-index"] = options.tooltipZIndex;
+		}
+	
+        $('<div id="'+getElementId(container, elementIds.msmstooltip)+'">' + contents + '</div>')
+				.css( tooltipCSS ).appendTo("body").fadeIn(200);
     }
 	
 	function makePlotResizable(container) {
@@ -1687,7 +1696,7 @@
 			return ionSeries.z[ion.charge];
 	}
 	
-	function makeIonTableMovable(container) {
+	function makeIonTableMovable(container, options) {
 
 		$(getElementSelector(container, elementIds.moveIonTable)).hover(
 			function(){
@@ -1706,6 +1715,10 @@
 				ionTableDiv.addClass("moved");
 				ionTableDiv.detach();
 				$(getElementSelector(container, elementIds.ionTableLoc2)).append(ionTableDiv);
+			}
+			
+			if ( options.sizeChangeCallbackFunction ) {
+				options.sizeChangeCallbackFunction();
 			}
 		});
 	}
