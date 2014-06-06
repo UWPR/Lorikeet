@@ -85,7 +85,16 @@ Options:
 		"zoomMs1": false,
 		"width": 750, 	  // width of the ms/ms plot
 		"height": 450, 	  // height of the ms/ms plot
-		"extraPeakSeries": []
+		"extraPeakSeries": [],
+		"showIonTable": true,
+        "showViewingOptions": true,
+        "showOptionsTable": true,
+        "showSequenceInfo": true,
+        "labelImmoniumIons": true,
+        "labelPrecursorPeak": true,
+        "labelReporters": false,
+        "showMassErrorPlot": false,
+        "massErrorPlotDefaultUnit": 'Da'
     }
     
     The required options(key/value pairs) are:
@@ -99,7 +108,7 @@ Options:
     1. charge: The charge of the precursor. This information is displayed at the top of the scan.
     2. precursorMz: The m/z of the precursor. This information is displayed at the top of the scan.
                     This value is required for labeling the precursor peak in the MS1 scan if 
-                    it is rendered. 
+                    it is rendered, and also marking the precursor peak in the MS/MS scan.
     3. scanNum:  The scan number of the MS/MS scan. This information is displayed at the top of the scan.
     4. fileName: Name of the file that contains the MS/MS scan. This information is displayed at the top of the scan.
     5. staticMods: An array of static modifications. Each modification is a set of key/value pairs.
@@ -123,5 +132,22 @@ Options:
                   Example: {data: [[10.0,2.0],[20.0,3.0]], color: "#00aa00",labelType: 'mz',labels: ['one','two']}
                   		   "labelType" should not be used if custom labels are provided as value to the "labels" key.
                            If "labelType" is 'mz', custom labels are ignored.
+    16. showIonTable: Show a table with theoretical fragment ion masses to the right of the annotated MS/MS scan.
+                      Default is true.
+    17. showViewingOptions: Show zooming and other options at the bottom of the MS/MS scan. Default is true.
+    18. showOptionsTable: Show a table with all the available options to the left of the annotated MS/MS scan.
+                          Default is true.
+    19. showSequenceInfo: Show sequence, m/z, filename, scan number, charge etc. at the top of the MS/MS scan.
+                          Default is true.
+    20. labelImmoniumIons: Label immonium ions in the MS/MS scan. Default is true.
+                           Example file: example_precursor_immonium.html
+    21. labelPrecursorPeaks: Label precursor ion if found in the MS/MS scan. Default is true.
+                             Example file: example_precursor_immonium.html
+    22. labelReporters: Label reporter ions such as iTRAQ and TMT. Default is false.
+                        Example file: example_itraq.html
+    23. showMassErrorPlot: Display a plot showing the mass errors for annoated peaks. Default is false.
+                           Example file: example_mass_error_plot.html
+    24. massErrorPlotDefaultUnit: Unit for mass error plot. Default is 'Da'.  Set to 'ppm' to see mass error in
+                                  parts per million.
 }
                                                                                         
