@@ -700,12 +700,10 @@
         $(getElementSelector(container, elementIds.immoniumIons)).click(function() {
             plotAccordingToChoices(container);
         });
-        if(container.data("options").labelReporters)
-        {
-            $(getElementSelector(container, elementIds.reporterIons)).click(function() {
-                plotAccordingToChoices(container);
-            });
-        }
+
+        $(getElementSelector(container, elementIds.reporterIons)).click(function() {
+            plotAccordingToChoices(container);
+        });
 
 		
 		var neutralLossContainer = $(getElementSelector(container, elementIds.nl_choice));
@@ -987,11 +985,7 @@
 
     function labelReporterIons(container)
     {
-        if(container.data("options").labelReporters)
-        {
-            return $(getElementSelector(container, elementIds.reporterIons)).is(":checked");
-        }
-        return false;
+        return $(getElementSelector(container, elementIds.reporterIons)).is(":checked");
     }
 
     function calculateImmoniumIons(container)
@@ -1047,26 +1041,24 @@
     function calculateReporterIons(container)
     {
         var options = container.data("options");
-        if(options.labelReporters)
+
+        // m/z: 113, 114, 115, 116, 117, 118, 119, and 121
+        var itraqIons = [113.0, 114.0, 115.0, 116.0, 117.0, 118.0, 119.0, 121.0];
+
+        var tmtIons = [126.0, 127.0, 128.0, 129.0, 130.0, 131.0];
+
+        var reporterSeries = [];
+        reporterSeries.push({color: "#2f4f4f", ions: itraqIons});  // DarkSlateBlue
+        reporterSeries.push({color: "#556b2f", ions: tmtIons});  // DarkOliveGreen
+
+        for(var i = 0; i < reporterSeries.length; i += 1)
         {
-            // m/z: 113, 114, 115, 116, 117, 118, 119, and 121
-            var itraqIons = [113.0, 114.0, 115.0, 116.0, 117.0, 118.0, 119.0, 121.0];
-
-            var tmtIons = [126.0, 127.0, 128.0, 129.0, 130.0, 131.0];
-
-            var reporterSeries = [];
-            reporterSeries.push({color: "#2f4f4f", ions: itraqIons});  // DarkSlateBlue
-            reporterSeries.push({color: "#556b2f", ions: tmtIons});  // DarkOliveGreen
-
-            for(var i = 0; i < reporterSeries.length; i += 1)
-            {
-                var series = reporterSeries[i];
-                var matches = calculateReporters(series.ions, series.color, container);
-                reporterSeries[i].matches = matches;
-            }
+            var series = reporterSeries[i];
+            var matches = calculateReporters(series.ions, series.color, container);
+            reporterSeries[i].matches = matches;
+        }
 
             container.data("reporterSeries", reporterSeries);
-        }
     }
 
     function calculateReporters(ionMzArray, color, container)
@@ -1932,6 +1924,9 @@
 			if(options.scanNum) {
 				fileinfo += ', Scan: '+options.scanNum;
 			}
+         if(options.precursorMz) {
+            fileinfo += ', Exp. m/z: '+options.precursorMz;
+         }
 			if(options.charge) {
 				fileinfo += ', Charge: '+options.charge;
 			}
@@ -2185,13 +2180,13 @@
         myTable+= ' id="'+getElementId(container, elementIds.immoniumIons)+'"/><span style="font-weight:bold;">Immonium ions</span>';
 
         // Reporter ions
+        myTable += "<br/>"
+        myTable+= '<input type="checkbox" value="true" ';
         if(options.labelReporters == true)
         {
-            myTable += "<br/>"
-            myTable+= '<input type="checkbox" value="true" ';
             myTable+=checked="checked";
-            myTable+= ' id="'+getElementId(container, elementIds.reporterIons)+'"/><span style="font-weight:bold;">Reporter ions</span>';
         }
+        myTable+= ' id="'+getElementId(container, elementIds.reporterIons)+'"/><span style="font-weight:bold;">Reporter ions</span>';
 
 		myTable += '</td> </tr> ';
 		
