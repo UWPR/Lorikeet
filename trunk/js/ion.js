@@ -88,7 +88,7 @@ var MASS_O_16 = 15.99491461956;  // O(16) Source: http://en.wikipedia.org/wiki/I
 var MASS_O_18 = 17.9991610;      // O(18) Source: http://en.wikipedia.org/wiki/Isotopes_of_oxygen
 
 // average masses
-var MASS_H = 1.00782504; // Source: http://en.wikipedia.org/wiki/Isotopes_of_hydrogen
+var MASS_H = 1.00794; 	 // Source: http://www.unimod.org/masses.html
 var MASS_C = 12.0107;    // Source: http://en.wikipedia.org/wiki/Isotopes_of_carbon
 var MASS_N = 14.0067;	 // Source: http://en.wikipedia.org/wiki/Isotopes_of_nitrogen
 var MASS_O = 15.9994;	 // Source: http://en.wikipedia.org/wiki/Isotopes_of_oxygen
