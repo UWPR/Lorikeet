@@ -517,7 +517,7 @@
         var xmax = options.peaks[options.peaks.length - 1][0];
         var xpadding = (xmax - xmin) * 0.025;
         // console.log("x-axis padding: "+xpadding);
-        return {xmin:xmin, xmax:xmax};
+        return {xmin:xmin - xpadding, xmax:xmax + xpadding};
     }
 
     function plotPeakMassErrorPlot(container, datasets) {
