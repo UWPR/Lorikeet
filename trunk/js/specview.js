@@ -1043,9 +1043,9 @@
         var options = container.data("options");
 
         // m/z: 113, 114, 115, 116, 117, 118, 119, and 121
-        var itraqIons = [113.0, 114.0, 115.0, 116.0, 117.0, 118.0, 119.0, 121.0];
+        var itraqIons = [113.11, 114.11, 115.11, 116.11, 117.11, 118.11, 119.11, 121.11];
 
-        var tmtIons = [126.0, 127.0, 128.0, 129.0, 130.0, 131.0];
+        var tmtIons = [126.13, 127.13, 128.13, 129.13, 130.13, 131.13];
 
         var reporterSeries = [];
         reporterSeries.push({color: "#2f4f4f", ions: itraqIons});  // DarkSlateBlue
