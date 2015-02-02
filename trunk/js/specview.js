@@ -1807,6 +1807,11 @@
 		// alert(myTable);
 		$(getElementSelector(container, elementIds.ionTable)).remove();
 		$(getElementSelector(container, elementIds.ionTableDiv)).prepend(myTable); // add as the first child
+		
+		if ( options.sizeChangeCallbackFunction ) {
+			options.sizeChangeCallbackFunction();
+		}
+
 	}
 	
 	function getCalculatedSeries(ionSeries, ion) {
