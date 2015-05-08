@@ -995,13 +995,15 @@
         var peaks = options.peaks;
 
         // immonium ions (70 P, 72 V, 86 I/L, 110 H, 120 F, 136 Y, 159 W)
-        var immoniumIonTypes = [{mass:70.0, aa:'P'},
-                                {mass:72.0, aa:'V'},
-                                {mass:86.0, aa:'I/L'},
-                                {mass:110.0, aa:'H'},
-                                {mass:120.0, aa:'F'},
-                                {mass:136.0, aa:'Y'},
-                                {mass:159.0, aa:'W'}]
+        var immoniumIonTypes = [{mass:70.0657, aa:'P'},
+                                {mass:102.0555, aa:'E'},
+                                {mass:72.0813, aa:'V'},
+                                {mass:86.0970, aa:'I/L'},
+                                {mass:110.0718, aa:'H'},
+                                {mass:120.0813, aa:'F'},
+                                {mass:101.0715, aa:'Q'},
+                                {mass:136.0762, aa:'Y'},
+                                {mass:159.0922, aa:'W'}]
 
         var immoniumIonMatches = [];
         var labels = [];
@@ -1042,27 +1044,30 @@
     {
         var options = container.data("options");
 
-        // m/z: 113, 114, 115, 116, 117, 118, 119, and 121
-        var itraqIons = [113.11, 114.11, 115.11, 116.11, 117.11, 118.11, 119.11, 121.11];
+        var itraqWholeLabel = 145.1069;
+        var itraqIons = [113.107325, 114.11068, 115.107715, 116.111069, 117.114424, 118.111459, 119.114814, 121.121524];
 
-        var tmtIons = [126.13, 127.13, 128.13, 129.13, 130.13, 131.13];
+        var tmtWholeLabel = 230.1702;
+        var tmtIons = [126.127725, 127.124760, 128.134433, 129.131468, 130.141141, 131.138176];
 
         var reporterSeries = [];
-        reporterSeries.push({color: "#2f4f4f", ions: itraqIons});  // DarkSlateBlue
-        reporterSeries.push({color: "#556b2f", ions: tmtIons});  // DarkOliveGreen
+        reporterSeries.push({color: "#2f4f4f", ions: itraqIons, wholeLabel: itraqWholeLabel});  // DarkSlateBlue
+        reporterSeries.push({color: "#556b2f", ions: tmtIons, wholeLabel: tmtWholeLabel});  // DarkOliveGreen
 
         for(var i = 0; i < reporterSeries.length; i += 1)
         {
             var series = reporterSeries[i];
-            var matches = calculateReporters(series.ions, series.color, container);
+            var matches = calculateReporters(series, container);
             reporterSeries[i].matches = matches;
         }
 
             container.data("reporterSeries", reporterSeries);
     }
 
-    function calculateReporters(ionMzArray, color, container)
+    function calculateReporters(seriesInfo, container)
     {
+        var ionMzArray = seriesInfo.ions;
+
         var options = container.data("options");
         var peaks = options.peaks;
         var matches = [];
@@ -1075,22 +1080,30 @@
             }
         }
         var labels = [];
+        var maxIntensity = 0;
+        for(var i = 0; i < matches.length; i += 1)
+        {
+            maxIntensity = Math.max(maxIntensity, matches[i][1]);
+        }
+
+        for(var i = 0; i < matches.length; i += 1)
+        {
+            var intensity = matches[i][1];
+            var rank = Math.round(((intensity/maxIntensity) * 100.0));
+            var mzRounded = matches[i][0].toFixed(1);
+            labels.push(mzRounded + " (" + rank + "%)");
+        }
+        // Get a match for the whole label.
+        var match = getMatchingPeakForMz(container, peaks, seriesInfo.wholeLabel);
+        if(match.bestPeak)
+        {
+            matches.push([match.bestPeak[0], match.bestPeak[1]]);
+            labels.push('nterm');
+        }
+
         if(matches.length > 0)
         {
-            var maxIntensity = 0;
-            for(var i = 0; i < matches.length; i += 1)
-            {
-                maxIntensity = Math.max(maxIntensity, matches[i][1]);
-            }
-
-            for(var i = 0; i < matches.length; i += 1)
-            {
-                var intensity = matches[i][1];
-                var rank = Math.round(((intensity/maxIntensity) * 100.0));
-                var mzRounded = matches[i][0].toFixed(1);
-                labels.push(mzRounded + " (" + rank + "%)");
-            }
-            return {data: matches, labels: labels, color:color};
+            return {data: matches, labels: labels, color:seriesInfo.color};
         }
     }
 
