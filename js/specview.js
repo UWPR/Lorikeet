@@ -24,6 +24,12 @@
                 ctermMod: 0, // additional mass to be added to the c-term
                 maxNeutralLossCount: 1,
                 peaks: [],
+                showA:[],
+                showB:[],
+                showC:[],
+                showX:[],
+                showY:[],
+                showZ:[],
                 sparsePeaks: null,
                 ms1peaks: null,
                 ms1scanLabel: null,
@@ -37,6 +43,7 @@
                 showIonTable: true,
                 showViewingOptions: true,
                 showOptionsTable: true,
+                peakLabelOpt: 'mz',
                 showSequenceInfo: true,
                 labelImmoniumIons: true,
                 labelPrecursorPeak: true,
@@ -178,6 +185,20 @@
         // Calculate reporter ion labels, if required
         calculateReporterIons(container);
 
+        // if defined ShowA to ShowZ not empty
+        var ion_choice = new Object();
+        set_ion_choice(options, ion_choice)
+
+        var ionChoiceContainer = $(getElementSelector(container, elementIds.ion_choice));
+        ionChoiceContainer.find("input:checkbox").each(function() {
+          var id = $(this).attr('id');
+          if( ion_choice[id] == 1){
+            $(this).attr('checked', 'checked');
+          }else{
+            $(this).attr('checked', "");
+          }
+        });
+
         createPlot(container, getDatasets(container)); // Initial MS/MS Plot
 
         if(options.ms1peaks && options.ms1peaks.length > 0) {
@@ -247,6 +268,27 @@
         if(options.showIonTable) {
             makeIonTable(container);
         }
+    }
+
+    function set_ion_choice(options,ion_choice){ 
+       var showion = new Array();
+       var ion_type = new Array('a','b','c','x','y','z');
+       showion[0]=options.showA;
+       showion[1]=options.showB;
+       showion[2]=options.showC;
+       showion[3]=options.showX;
+       showion[4]=options.showY;
+       showion[5]=options.showZ; 
+       for (i=0; i<6; i++){
+         for (j=0; j<3; j++){
+           var n=j+1;
+           if (showion[i][j] == 1){
+             ion_choice[ion_type[i]+'_'+n] = 1;
+           }else{
+             ion_choice[ion_type[i]+'_'+n] = 0;
+           }
+         }
+       }
     }
 
     // trim any 0 intensity peaks from the end of the ms/ms peaks array
@@ -473,7 +515,17 @@
 
         var plot;
     	if(!container.data("zoomRange")) {
-    		plot = $.plot($(getElementSelector(container, elementIds.msmsplot)), datasets,  container.data("plotOptions"));
+		// Set the default X range to be from 50 to the MW of the peptide.
+		// This allows easier comparison of different spectra from the
+                // same peptide ion in different browser tabs. One can blink back
+                // and forth when the display range is identical.
+    		var selectOpts = {};
+        	var options = container.data("options");
+                var neutralMass = options.peptide.getNeutralMassMono() + Ion.MASS_O + Ion.MASS_H;
+		selectOpts.xaxis = { min: 50, max: neutralMass };
+    		plot = $.plot(getElementSelector(container, elementIds.msmsplot), datasets,
+                      $.extend(true, {}, container.data("plotOptions"), selectOpts));
+    		//plot = $.plot($(getElementSelector(container, elementIds.msmsplot)), datasets,  container.data("plotOptions"));
         }
     	else {
             var zoomRange = container.data("zoomRange");
