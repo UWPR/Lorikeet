@@ -192,8 +192,10 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
 
         var ammoniaLoss = NeutralLoss.AmmoniaLoss();
         var waterLoss = NeutralLoss.WaterLoss();
+        var phosphoLoss = NeutralLoss.PhosphoLoss();
         potentialLosses_lorikeet[ammoniaLoss.label()] = ammoniaLoss;
         potentialLosses_lorikeet[waterLoss.label()] = waterLoss;
+        potentialLosses_lorikeet[phosphoLoss.label()] = phosphoLoss;
 
         for(var i = 0; i < sequence.length; i += 1)
         {
@@ -202,9 +204,13 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
             {
                 potentialLossesAtIndex[i].push(ammoniaLoss);
             }
-            else if (aa == 'S' || aa == 'T' || aa == 'E' || aa == 'D')
+            if (aa == 'S' || aa == 'T' || aa == 'E' || aa == 'D')
             {
                 potentialLossesAtIndex[i].push(waterLoss);
+            }
+            if (aa == 'S' || aa == 'T' || aa == 'Y')
+            {
+                potentialLossesAtIndex[i].push(phosphoLoss);
             }
         }
     }
@@ -574,6 +580,10 @@ NeutralLoss.AmmoniaLoss = function _getAmmoniaLoss()
 NeutralLoss.WaterLoss = function _getWaterLoss()
 {
     return new NeutralLoss(Ion.WaterLossMass_mono, Ion.WaterLossMass_avg, "H2O", "o");
+}
+NeutralLoss.PhosphoLoss = function _getPhosphoLoss()
+{
+    return new NeutralLoss(Ion.PhosphoLossMass_mono, Ion.PhosphoLossMass_avg, "H3PO4", "p");
 }
 
 function LossCombination()
