@@ -38,7 +38,7 @@
                 zoomMs1: false,
                 width: 700, 	// width of the ms/ms plot
                 height: 450, 	// height of the ms/ms plot
-                massError: 0.5, // mass tolerance for labeling peaks
+                massError: 0.5, // mass tolerance (in th) for labeling peaks
                 extraPeakSeries:[],
                 showIonTable: true,
                 showViewingOptions: true,
@@ -64,7 +64,7 @@
 	};
 
     var index = 0;
-    var massErrorType_Da = 'Da';
+    var massErrorType_Da = 'Th';		// Th are units of m/z
     var massErrorType_ppm = 'ppm';
 
     var elementIds = {
@@ -576,7 +576,7 @@
         var data = [];
         var options = container.data("options");
 
-        var daError = options.massErrorPlotDefaultUnit === 'Da';
+        var daError = options.massErrorPlotDefaultUnit === 'Th';
 
         var minMassError = 0;
         var maxMassError = 0;
@@ -2275,7 +2275,7 @@
 		myTable += '</nobr> ';
 		myTable += '</div> ';
 		myTable += '<div style="margin-top:10px;"> ';
-		myTable += '<nobr>Mass Tol: <input id="'+getElementId(container, elementIds.massError)+'" type="text" value="'+options.massError+'" size="4"/></nobr> ';
+		myTable += '<nobr>Mass Tol: <input id="'+getElementId(container, elementIds.massError)+'" type="text" value="'+options.massError+'" style="width:3em;"/>Th</nobr> ';
 		myTable += '</div> ';
 		myTable += '<div style="margin-top:10px;" align="center"> ';
 		myTable += '<input id="'+getElementId(container, elementIds.update)+'" type="button" value="Update"/> ';
