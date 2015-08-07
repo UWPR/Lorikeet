@@ -34,10 +34,10 @@ Ion.Z_2 = new Ion("z", "#FFA500", 2, "c"); // orange
 // charge +3
 Ion.A_3 = new Ion("a", "#9ACD32", 3, "n"); // yellow green
 Ion.B_3 = new Ion("b", "#00BFFF", 3, "n"); // deep sky blue
-Ion.C_3 = new Ion("c", "#66CDAA", 3, "c"); // medium aquamarine
+Ion.C_3 = new Ion("c", "#66CDAA", 3, "n"); // medium aquamarine
 Ion.X_3 = new Ion("x", "#9932CC", 3, "c"); // dark orchid
 Ion.Y_3 = new Ion("y", "#FFA07A", 3, "c"); // light salmon
-Ion.Z_3 = new Ion("z", "#FFD700", 3, "n"); // gold
+Ion.Z_3 = new Ion("z", "#FFD700", 3, "c"); // gold
 
 var _ions = [];
 _ions["a"] = [];
