@@ -162,11 +162,8 @@
         storeContainerData(container, options);
         initContainer(container);
 
-        if(options.charge) {
-            makeOptionsTable(container, Math.max(1,options.charge-1));
-        }
-        else
-            makeOptionsTable(container, 1);
+        var defaultSelectedIons = getDefaultSelectedIons(options);
+        makeOptionsTable(container,[1,2,3], defaultSelectedIons);
 
         makeViewingOptions(container, options);
 
@@ -185,19 +182,6 @@
         // Calculate reporter ion labels, if required
         calculateReporterIons(container);
 
-        // if defined ShowA to ShowZ not empty
-        var ion_choice = new Object();
-        set_ion_choice(options, ion_choice)
-
-        var ionChoiceContainer = $(getElementSelector(container, elementIds.ion_choice));
-        ionChoiceContainer.find("input:checkbox").each(function() {
-          var id = $(this).attr('id');
-          if( ion_choice[id] == 1){
-            $(this).attr('checked', 'checked');
-          }else{
-            $(this).attr('checked', "");
-          }
-        });
 
         createPlot(container, getDatasets(container)); // Initial MS/MS Plot
 
@@ -270,27 +254,55 @@
         }
     }
 
-    function set_ion_choice(options,ion_choice){ 
-       var showion = new Array();
-       var ion_type = new Array('a','b','c','x','y','z');
-       showion[0]=options.showA;
-       showion[1]=options.showB;
-       showion[2]=options.showC;
-       showion[3]=options.showX;
-       showion[4]=options.showY;
-       showion[5]=options.showZ; 
-       for (i=0; i<6; i++){
-         for (j=0; j<3; j++){
-           var n=j+1;
-           if (showion[i][j] == 1){
-             ion_choice[ion_type[i]+'_'+n] = 1;
-           }else{
-             ion_choice[ion_type[i]+'_'+n] = 0;
+    function getDefaultSelectedIons(options)
+    {
+        var userDefined = false;
+        var defaultSelected = {};
+        if(options.showA.length > 0)
+        {
+            userDefined = true;
+            defaultSelected['a'] = options.showA;
            }
+        if(options.showB.length > 0)
+        {
+            userDefined = true;
+            defaultSelected['b'] = options.showB;
          }
+        if(options.showC.length > 0)
+        {
+            userDefined = true;
+            defaultSelected['c'] = options.showC;
        }
+        if(options.showX.length > 0)
+        {
+            userDefined = true;
+            defaultSelected['x'] = options.showX;
     }
-
+        if(options.showY.length > 0)
+        {
+            userDefined = true;
+            defaultSelected['y'] = options.showY;
+        }
+        if(options.showZ.length > 0)
+        {
+            userDefined = true;
+            defaultSelected['z'] = options.showZ
+        }
+        if(!userDefined)
+        {
+            var selected = [1];
+            if(options.charge)
+            {
+                for (var i = 2; i < options.charge; i += 1)
+                {
+                    selected.push(1);
+                }
+            }
+            defaultSelected['b'] = selected;
+            defaultSelected['y'] = selected;
+        }
+        return defaultSelected;
+    }
     // trim any 0 intensity peaks from the end of the ms/ms peaks array
     function trimPeaksArray(options)
     {
@@ -1189,7 +1201,9 @@
 		for(var i = 0; i < selectedIonTypes.length; i += 1) {
 			var sion = selectedIonTypes[i];
 			if(sion.type == "a" || sion.type == "b" || sion.type == "c") 
+            {
 				ntermIons.push(sion);
+		}
 		}
 		ntermIons.sort(function(m,n) {
 			if(m.type == n.type) {
@@ -1293,10 +1307,16 @@
 					for(var j = 0; j < todoIonSeries.length; j += 1) {
 						var tion = todoIonSeries[j];
 						var ionSeriesData = todoIonSeriesData[j];
+
+                        var ion = Ion.getSeriesIon(tion, container.data("options").peptide, i, massType);
+                        // Put the ion masses in increasing value of m/z, For c-term ions the array will have to be
+                        // populated backwards.
 						if(tion.term == "n")
-							ionSeriesData.push(sion = Ion.getSeriesIon(tion, container.data("options").peptide, i, massType));
+                            // Add to end of array
+							ionSeriesData.push(ion);
 						else if(tion.term == "c")
-							ionSeriesData.unshift(sion = Ion.getSeriesIon(tion, container.data("options").peptide, i, massType));
+                            // Add to beginning of array
+							ionSeriesData.unshift(ion);
 					}
 				}
 			}
@@ -2139,7 +2159,7 @@
 	//---------------------------------------------------------
 	// OPTIONS TABLE
 	//---------------------------------------------------------
-	function makeOptionsTable(container, charge) {
+	function makeOptionsTable(container, defaultChargeStates, defaultSelectedIons) {
 
         var options = container.data("options");
 
@@ -2153,64 +2173,22 @@
 		myTable += '<b>Ions:</b> ';
 		myTable += '<div id="'+getElementId(container, elementIds.ion_choice)+'" style="margin-bottom: 10px"> ';
 		myTable += '<!-- a ions --> ';
-		myTable += '<nobr> ';
-		myTable += '<span style="font-weight: bold;">a</span> ';
-		myTable += '<input type="checkbox" value="1" id="a_1"/>1<sup>+</sup> ';
-		myTable += '<input type="checkbox" value="2" id="a_2"/>2<sup>+</sup> ';
-		myTable += '<input type="checkbox" value="3" id="a_3"/>3<sup>+</sup> ';
-		myTable += '</nobr> ';
+        myTable += addIonToOptionsTable('a', defaultChargeStates, defaultSelectedIons['a']);
 		myTable += '<br/> ';
 		myTable += '<!-- b ions --> ';
-		myTable += '<nobr> ';
-		myTable += '<span style="font-weight: bold;">b</span> ';
-		myTable += '<input type="checkbox" value="1" id="b_1" checked="checked"/>1<sup>+</sup> ';
-		if(charge >= 2)
-			myTable += '<input type="checkbox" value="2" id="b_2" checked="checked"/>2<sup>+</sup> ';
-		else
-			myTable += '<input type="checkbox" value="2" id="b_2"/>2<sup>+</sup> ';
-		if(charge >= 3)
-			myTable += '<input type="checkbox" value="3" id="b_3" checked="checked"/>3<sup>+</sup> ';
-		else
-			myTable += '<input type="checkbox" value="3" id="b_3"/>3<sup>+</sup> ';
-		myTable += '</nobr> ';
+        myTable += addIonToOptionsTable('b', defaultChargeStates, defaultSelectedIons['b']);
 		myTable += '<br/> ';
 		myTable += '<!-- c ions --> ';
-		myTable += '<nobr> ';
-		myTable += '<span style="font-weight: bold;">c</span> ';
-		myTable += '<input type="checkbox" value="1" id="c_1"/>1<sup>+</sup> ';
-		myTable += '<input type="checkbox" value="2" id="c_2"/>2<sup>+</sup> ';
-		myTable += '<input type="checkbox" value="3" id="c_3"/>3<sup>+</sup> ';
-		myTable += '</nobr> ';
+        myTable += addIonToOptionsTable('c', defaultChargeStates, defaultSelectedIons['c']);
 		myTable += '<br/> ';
 		myTable += '<!-- x ions --> ';
-		myTable += '<nobr> ';
-		myTable += '<span style="font-weight: bold;">x</span> ';
-		myTable += '<input type="checkbox" value="1" id="x_1"/>1<sup>+</sup> ';
-		myTable += '<input type="checkbox" value="2" id="x_2"/>2<sup>+</sup> ';
-		myTable += '<input type="checkbox" value="3" id="x_3"/>3<sup>+</sup> ';
-		myTable += '</nobr> ';
+        myTable += addIonToOptionsTable('x', defaultChargeStates, defaultSelectedIons['x']);
 		myTable += '<br/> ';
 		myTable += '<!-- y ions --> ';
-		myTable += '<nobr> ';
-		myTable += '<span style="font-weight: bold;">y</span> ';
-		myTable += '<input type="checkbox" value="1" id="y_1" checked="checked"/>1<sup>+</sup> ';
-		if(charge >= 2)
-			myTable += '<input type="checkbox" value="2" id="y_2" checked="checked"/>2<sup>+</sup> ';
-		else 
-			myTable += '<input type="checkbox" value="2" id="y_2"/>2<sup>+</sup> ';
-		if(charge >= 3)
-			myTable += '<input type="checkbox" value="3" id="y_3" checked="checked"/>3<sup>+</sup> ';
-		else
-			myTable += '<input type="checkbox" value="3" id="y_3"/>3<sup>+</sup> ';
-		myTable += '</nobr> ';
+        myTable += addIonToOptionsTable('y', defaultChargeStates, defaultSelectedIons['y']);
 		myTable += '<br/> ';
 		myTable += '<!-- z ions --> ';
-		myTable += '<nobr> ';
-		myTable += '<span style="font-weight: bold;">z</span> ';
-		myTable += '<input type="checkbox" value="1" id="z_1"/>1<sup>+</sup> ';
-		myTable += '<input type="checkbox" value="2" id="z_2"/>2<sup>+</sup> ';
-		myTable += '<input type="checkbox" value="3" id="z_3"/>3<sup>+</sup> ';
-		myTable += '</nobr> ';
+        myTable += addIonToOptionsTable('z', defaultChargeStates, defaultSelectedIons['z']);
 		myTable += '<br/> ';
 		myTable += '<span id="'+getElementId(container, elementIds.deselectIonsLink)+'" style="font-size:8pt;text-decoration: underline; color:sienna;cursor:pointer;">[Deselect All]</span> ';
 		myTable += '</div> ';
@@ -2322,5 +2300,21 @@
         }
 	}
 
+    function addIonToOptionsTable(ionLabel, charges, selected)
+    {
+        if(!selected) selected = [];
+        var ionRow = "";
+        ionRow += '<nobr> ';
+        ionRow += '<span style="font-weight: bold;">' + ionLabel + '</span> ';
+        for (var i = 0; i < charges.length; i += 1)
+        {
+            var id = ionLabel + "_" + charges[i];
+            var checked = (selected[i] && selected[i] == 1) ? 'checked="checked"' : "";
+            ionRow += '<input type="checkbox" value="' + charges[i] + '" id="' + id + '" ' + checked + '/>' + charges[i] + '<sup>+</sup> ';
+        }
+        ionRow += '</nobr> ';
+        return ionRow;
+    }
+	
 	
 })(jQuery);
