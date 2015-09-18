@@ -526,18 +526,9 @@
 	function createPlot(container, datasets) {
 
         var plot;
-    	if(!container.data("zoomRange")) {
-		// Set the default X range to be from 50 to the MW of the peptide.
-		// This allows easier comparison of different spectra from the
-                // same peptide ion in different browser tabs. One can blink back
-                // and forth when the display range is identical.
-    		var selectOpts = {};
-        	var options = container.data("options");
-                var neutralMass = options.peptide.getNeutralMassMono() + Ion.MASS_O + Ion.MASS_H;
-		selectOpts.xaxis = { min: 50, max: neutralMass };
-    		plot = $.plot(getElementSelector(container, elementIds.msmsplot), datasets,
-                      $.extend(true, {}, container.data("plotOptions"), selectOpts));
-    		//plot = $.plot($(getElementSelector(container, elementIds.msmsplot)), datasets,  container.data("plotOptions"));
+    	if(!container.data("zoomRange"))
+        {
+            plot = $.plot($(getElementSelector(container, elementIds.msmsplot)), datasets,  container.data("plotOptions"));
         }
     	else {
             var zoomRange = container.data("zoomRange");
@@ -577,8 +568,14 @@
     }
 
     function getPlotXRange(options) {
-        var xmin = options.peaks[0][0];
-        var xmax = options.peaks[options.peaks.length - 1][0];
+        // Set the default X range to be from 50 to the MW of the peptide.
+        // This allows easier comparison of different spectra from
+        // same peptide ion in different browser tabs. One can blink back
+        // and forth when the display range is identical.
+        var xmin = 50;
+        // var xmin = options.peaks[0][0];
+        var xmax = options.peptide.getNeutralMassMono();
+        // var xmax = options.peaks[options.peaks.length - 1][0];
         var xpadding = (xmax - xmin) * 0.025;
         // console.log("x-axis padding: "+xpadding);
         return {xmin:xmin - xpadding, xmax:xmax + xpadding};
@@ -615,6 +612,13 @@
         var placeholder = $(getElementSelector(container, elementIds.massErrorPlot));
 
         var __xrange = getPlotXRange(options);
+        var zoomRange = container.data("zoomRange");
+        if(zoomRange)
+        {
+            // Sync zooming with the MS/MS plot.
+            __xrange.xmin = zoomRange.xaxis.from;
+            __xrange.xmax = zoomRange.xaxis.to;
+        }
 
         var ypadding = Math.abs(maxMassError - minMassError) * 0.025;
 
