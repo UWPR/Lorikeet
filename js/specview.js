@@ -39,6 +39,7 @@
                 width: 700, 	// width of the ms/ms plot
                 height: 450, 	// height of the ms/ms plot
                 massError: 0.5, // mass tolerance (in th) for labeling peaks
+                massErrorUnit: massErrorTypeTh, // 'Th' or 'ppm'
                 extraPeakSeries:[],
                 showIonTable: true,
                 showViewingOptions: true,
@@ -50,7 +51,11 @@
                 labelReporters: false,
 				tooltipZIndex: null,
                 showMassErrorPlot: false,
-                massErrorPlotDefaultUnit: massErrorType_Da
+                massErrorPlotDefaultUnit: null,
+                // Use these option to set the x-axis range (m/z) that will be displayed when the MS/MS plot is initialized or is fully zoomed out.
+                // Default range is the min and max peak m/z.
+                minDisplayMz: null,
+                maxDisplayMz: null
         };
 			
 	    var options = $.extend(true, {}, defaults, opts); // this is a deep copy
@@ -64,11 +69,12 @@
 	};
 
     var index = 0;
-    var massErrorType_Da = 'Th';		// Th are units of m/z
-    var massErrorType_ppm = 'ppm';
+    var massErrorTypeTh = 'Th';		// Th are units of m/z
+    var massErrorTypePpm = 'ppm';
 
     var elementIds = {
             massError: "massError",
+            massErrorUnit: "massErrorUnit",
             msPlot: "msPlot",
             massErrorPlot: "massErrorPlot",
             massErrorPlot_unit: "massErrorPlot_unit",
@@ -156,6 +162,24 @@
             options.calculatedMz = Ion.getMz(mass, options.charge);
         }
 
+        if(!options.minDisplayMz)
+        {
+            options.minDisplayMz = options.peaks[0][0];
+        }
+        if(!options.maxDisplayMz)
+        {
+            options.maxDisplayMz = options.peaks[options.peaks.length - 1][0];
+        }
+
+        if(options.massErrorUnit !== massErrorTypeTh && options.massErrorUnit !== massErrorTypePpm)
+        {
+            console.warn("Invalid mass error unit given: " + options.massErrorUnit + ". Setting to " + massErrorTypeTh + ".");
+            options.massErrorUnit = massErrorTypeTh;
+        }
+        if(!options.massErrorPlotDefaultUnit)
+        {
+            options.massErrorPlotDefaultUnit = options.massErrorUnit;
+        }
 
         var container = createContainer(parent_container);
         // alert(container.attr('id')+" parent "+container.parent().attr('id'));
@@ -339,7 +363,6 @@
         container.data("ionSeries", {a: [], b: [], c: [], x: [], y: [], z: []});
         container.data("ionSeriesLabels", {a: [], b: [], c: [], x: [], y: [], z: []});
         container.data("ionSeriesMatch", {a: [], b: [], c: [], x: [], y: [], z: []});
-        container.data("massError", options.massError);
 
         var maxInt = getMaxInt(options);
         var __xrange = getPlotXRange(options);
@@ -387,11 +410,18 @@
 	}
 	
 	function setMassError(container) {
+        var options = container.data("options");
    		var me = parseFloat($(getElementSelector(container, elementIds.massError)).val());
-		if(me != container.data("massError")) {
-			container.data("massError", me);
+        var unit = getMassErrorUnit(container);
+		if(me != options.massError) {
+            options.massError = me;
 			container.data("massErrorChanged", true);
 		}
+        else if(options.massErrorUnit !== unit)
+        {
+            options.massErrorUnit = unit;
+            container.data("massErrorChanged", true);
+        }
 		else {
 			container.data("massErrorChanged", false);
 		}
@@ -568,14 +598,9 @@
     }
 
     function getPlotXRange(options) {
-        // Set the default X range to be from 50 to the MW of the peptide.
-        // This allows easier comparison of different spectra from
-        // same peptide ion in different browser tabs. One can blink back
-        // and forth when the display range is identical.
-        var xmin = 50;
-        // var xmin = options.peaks[0][0];
-        var xmax = options.peptide.getNeutralMassMono();
-        // var xmax = options.peaks[options.peaks.length - 1][0];
+
+        var xmin = options.minDisplayMz;
+        var xmax = options.maxDisplayMz;
         var xpadding = (xmax - xmin) * 0.025;
         // console.log("x-axis padding: "+xpadding);
         return {xmin:xmin - xpadding, xmax:xmax + xpadding};
@@ -585,7 +610,7 @@
         var data = [];
         var options = container.data("options");
 
-        var daError = options.massErrorPlotDefaultUnit === 'Th';
+        var ppmError = options.massErrorPlotDefaultUnit === massErrorTypePpm;
 
         var minMassError = 0;
         var maxMassError = 0;
@@ -599,7 +624,7 @@
                     var observedMz = seriesData[j][0];
                     var theoreticalMz = seriesData[j][2];
                     var massError = theoreticalMz - observedMz;
-                    if (!daError) {
+                    if (ppmError) {
                         massError = ((massError) / observedMz) * 1000000;
                     }
                     minMassError = Math.min(minMassError, massError);
@@ -609,6 +634,7 @@
                 data.push({data:s_data, color:series.color, labelType:'none'});
             }
         }
+
         var placeholder = $(getElementSelector(container, elementIds.massErrorPlot));
 
         var __xrange = getPlotXRange(options);
@@ -625,6 +651,12 @@
         // the MS/MS plot should have been created by now.  This is a hack to get the plots aligned.
         // We will set the y-axis labelWidth to this value.
         var labelWidth = container.data("plot").getAxes().yaxis.labelWidth;
+
+        if(data.length === 0)
+        {
+            // Add dummy data to show an empty plot.
+            data.push({data:[__xrange.xmin, 0], color:'#000000', labelType:'none'});
+        }
 
         var massErrorPlotOptions = {
             series:{data:data, points:{show:true, fill:true, radius:1}, shadowSize:0},
@@ -651,28 +683,29 @@
 
         // TOOLTIPS
         $(getElementSelector(container, elementIds.massErrorPlot)).bind("plothover", function (event, pos, item) {
-
             displayTooltip(item, container, options, "m/z", "error");
         });
 
-        // CHECKBOX TO SHOW OR HIDE MASS ERROR PLOT
         var massErrorPlot = $.plot(placeholder, data, massErrorPlotOptions);
+
+        // Display clickable mass error unit.
         var o = massErrorPlot.getPlotOffset();
         placeholder.append('<div id="' + getElementId(container, elementIds.massErrorPlot_unit) + '" class="link"  '
             + 'style="position:absolute; left:'
             + (o.left + 5) + 'px;top:' + (o.top + 4) + 'px;'
             + 'background-color:yellow; font-style:italic">'
             + options.massErrorPlotDefaultUnit + '</div>');
+        // Toggle mass error unit on click.
         $(getElementSelector(container, elementIds.massErrorPlot_unit)).click(function () {
             var unit = $(this).text();
 
-            if (unit === massErrorType_Da) {
-                $(this).text(massErrorType_ppm);
-                options.massErrorPlotDefaultUnit = massErrorType_ppm;
+            if (unit === massErrorTypeTh) {
+                $(this).text(massErrorTypePpm);
+                options.massErrorPlotDefaultUnit = massErrorTypePpm;
             }
-            else if (unit === massErrorType_ppm) {
-                $(this).text(massErrorType_Da);
-                options.massErrorPlotDefaultUnit = massErrorType_Da;
+            else if (unit === massErrorTypePpm) {
+                $(this).text(massErrorTypeTh);
+                options.massErrorPlotDefaultUnit = massErrorTypeTh;
             }
             plotPeakMassErrorPlot(container, datasets);
         });
@@ -773,7 +806,7 @@
             plotAccordingToChoices(container);
         });
 
-		
+		// Plot neutral loss options
 		var neutralLossContainer = $(getElementSelector(container, elementIds.nl_choice));
 		neutralLossContainer.find("input").click(function() {
 			container.data("selectedNeutralLossChanged", true);
@@ -781,11 +814,14 @@
             container.data("options").peptide.recalculateLossOptions(selectedNeutralLosses, container.data("options").maxNeutralLossCount);
 			plotAccordingToChoices(container);
 		});
-		
+
+        // Mass type options
 	    container.find("input[name='"+getRadioName(container, "massTypeOpt")+"']").click(function() {
 	    	container.data("massTypeChanged", true);
 	    	plotAccordingToChoices(container);
 	    });
+
+        // Peak detect checkbox
         $(getElementSelector(container, elementIds.peakDetect)).click(function() {
             container.data("peakAssignmentTypeChanged", true);
             plotAccordingToChoices(container);
@@ -1332,6 +1368,11 @@
         return container.find("input[name='"+getRadioName(container, "massTypeOpt")+"']:checked").val();
     }
 
+    function getMassErrorUnit(container)
+    {
+        return container.find("input[name='"+getRadioName(container, "massErrorUnit")+"']:checked").val();
+    }
+
     function getPeakAssignmentType(container)
     {
         return container.find("input[name='"+getRadioName(container, "peakAssignOpt")+"']:checked").val();
@@ -1354,12 +1395,13 @@
 		var peakAssignmentType = getPeakAssignmentType(container);
 		var peakLabelType = container.find("input[name='"+getRadioName(container, "peakLabelOpt")+"']:checked").val();
         var massType = getMassType(container);
+        var massErrorUnit = getMassErrorUnit(container);
 
         var ionSeriesMatch = container.data("ionSeriesMatch");
         var ionSeries = container.data("ionSeries");
         var ionSeriesLabels = container.data("ionSeriesLabels");
         var options = container.data("options");
-        var massError = container.data("massError");
+        var massError = container.data("options").massError;
         var peaks = getPeaks(container);
 
 		for(var j = 0; j < selectedIonTypes.length; j += 1) {
@@ -1371,7 +1413,7 @@
 				if(recalculate(container) || !ionSeriesMatch.a[ion.charge]) { // re-calculate only if mass error has changed OR
 																		// matching peaks for this series have not been calculated
 					// calculated matching peaks
-					var adata = calculateMatchingPeaks(container, ionSeries.a[ion.charge], peaks, massError, peakAssignmentType, massType);
+					var adata = calculateMatchingPeaks(container, ionSeries.a[ion.charge], peaks, massError, massErrorUnit, peakAssignmentType, massType);
 					if(adata && adata.length > 0) {
 						ionSeriesMatch.a[ion.charge] = adata[0];
 						ionSeriesLabels.a[ion.charge] = adata[1];
@@ -1384,7 +1426,7 @@
 				if(recalculate(container) || !ionSeriesMatch.b[ion.charge]) { // re-calculate only if mass error has changed OR
 																		// matching peaks for this series have not been calculated
 					// calculated matching peaks
-					var bdata = calculateMatchingPeaks(container, ionSeries.b[ion.charge], peaks, massError, peakAssignmentType, massType);
+					var bdata = calculateMatchingPeaks(container, ionSeries.b[ion.charge], peaks, massError, massErrorUnit, peakAssignmentType, massType);
 					if(bdata && bdata.length > 0) {
 						ionSeriesMatch.b[ion.charge] = bdata[0];
 						ionSeriesLabels.b[ion.charge] = bdata[1];
@@ -1397,7 +1439,7 @@
 				if(recalculate(container) || !ionSeriesMatch.c[ion.charge]) { // re-calculate only if mass error has changed OR
 																		// matching peaks for this series have not been calculated
 					// calculated matching peaks
-					var cdata = calculateMatchingPeaks(container, ionSeries.c[ion.charge], peaks, massError, peakAssignmentType, massType);
+					var cdata = calculateMatchingPeaks(container, ionSeries.c[ion.charge], peaks, massError, massErrorUnit, peakAssignmentType, massType);
 					if(cdata && cdata.length > 0) {
 						ionSeriesMatch.c[ion.charge] = cdata[0];
 						ionSeriesLabels.c[ion.charge] = cdata[1];
@@ -1410,7 +1452,7 @@
 				if(recalculate(container) || !ionSeriesMatch.x[ion.charge]) { // re-calculate only if mass error has changed OR
 																		// matching peaks for this series have not been calculated
 					// calculated matching peaks
-					var xdata = calculateMatchingPeaks(container, ionSeries.x[ion.charge], peaks, massError, peakAssignmentType, massType);
+					var xdata = calculateMatchingPeaks(container, ionSeries.x[ion.charge], peaks, massError, massErrorUnit, peakAssignmentType, massType);
 					if(xdata && xdata.length > 0) {
 						ionSeriesMatch.x[ion.charge] = xdata[0];
 						ionSeriesLabels.x[ion.charge] = xdata[1];
@@ -1423,7 +1465,7 @@
 				if(recalculate(container) || !ionSeriesMatch.y[ion.charge]) { // re-calculate only if mass error has changed OR
 																		// matching peaks for this series have not been calculated
 					// calculated matching peaks
-					var ydata = calculateMatchingPeaks(container, ionSeries.y[ion.charge], peaks, massError, peakAssignmentType, massType);
+					var ydata = calculateMatchingPeaks(container, ionSeries.y[ion.charge], peaks, massError, massErrorUnit, peakAssignmentType, massType);
 					if(ydata && ydata.length > 0) {
 						ionSeriesMatch.y[ion.charge] = ydata[0];
 						ionSeriesLabels.y[ion.charge] = ydata[1];
@@ -1436,7 +1478,7 @@
 				if(recalculate(container) || !ionSeriesMatch.z[ion.charge]) { // re-calculate only if mass error has changed OR
 																		// matching peaks for this series have not been calculated
 					// calculated matching peaks
-					var zdata = calculateMatchingPeaks(container, ionSeries.z[ion.charge], peaks, massError, peakAssignmentType, massType);
+					var zdata = calculateMatchingPeaks(container, ionSeries.z[ion.charge], peaks, massError, massErrorUnit, peakAssignmentType, massType);
 					if(zdata && zdata.length > 0) {
 						ionSeriesMatch.z[ion.charge] = zdata[0];
 						ionSeriesLabels.z[ion.charge] = zdata[1];
@@ -1476,7 +1518,7 @@
         return ionmz;
     }
 
-	function calculateMatchingPeaks(container, ionSeries, allPeaks, massTolerance, peakAssignmentType, massType) {
+	function calculateMatchingPeaks(container, ionSeries, allPeaks, massTolerance, massErrorUnit, peakAssignmentType, massType) {
 
         // console.log("calculating matching peaks");
 		var peakIndex = 0;
@@ -1486,6 +1528,7 @@
 		matchData[1] = []; // labels -- ions;
 
         var peptide = container.data("options").peptide;
+
 		for(var i = 0; i < ionSeries.length; i += 1) {
 			
 			var sion = ionSeries[i];
@@ -1494,7 +1537,7 @@
             var minIndex = Number.MAX_VALUE;
             var neutralLossOptions = peptide.getPotentialLosses(sion);
 
-            var index = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, peakAssignmentType, null, massType);
+            var index = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, massErrorUnit, peakAssignmentType, null, massType);
             minIndex = Math.min(minIndex, index);
 
             for(var n = 1; n < neutralLossOptions.length; n += 1)
@@ -1503,7 +1546,7 @@
                 for(var k = 0; k < loss_options_with_n_losses.lossCombinationCount(); k += 1)
                 {
                     var lossCombination = loss_options_with_n_losses.getLossCombination(k);
-                    var index = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, peakAssignmentType, lossCombination, massType);
+                    var index = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, massErrorUnit, peakAssignmentType, lossCombination, massType);
                     minIndex = Math.min(minIndex, index);
                 }
             }
@@ -1519,14 +1562,14 @@
 	// allPeaks -- array with all the scan peaks
 	// peakIndex -- current index in peaks array
 	// Returns the index of the matching peak, if one is found
-    function getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, peakAssignmentType, neutralLosses, massType) {
+    function getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, massErrorUnit, peakAssignmentType, neutralLosses, massType) {
 		
 		if(!neutralLosses)
 			sion.match = false; // reset;
 		var ionmz = ionMz(sion, neutralLosses, massType);
         var peakLabel = getLabel(sion, neutralLosses);
 
-		var __ret = getMatchingPeak(peakIndex, allPeaks, ionmz, massTolerance, peakAssignmentType);
+		var __ret = getMatchingPeak(peakIndex, allPeaks, ionmz, massTolerance, massErrorUnit, peakAssignmentType);
 
         peakIndex = __ret.peakIndex;
         var bestPeak = __ret.bestPeak;
@@ -1546,25 +1589,35 @@
 
     function getMatchingPeakForMz(container, allPeaks, ionMz)
     {
-        var massError = container.data("massError");
+        var massError = container.data("options").massError;
+        var massErrorUnit = getMassErrorUnit(container);
         var peakAssignmentType = getPeakAssignmentType(container);
-        return getMatchingPeak(0, allPeaks, ionMz, massError, peakAssignmentType);
+        return getMatchingPeak(0, allPeaks, ionMz, massError, massErrorUnit, peakAssignmentType);
     }
 
-    function getMatchingPeak(peakIndex, allPeaks, ionmz, massTolerance, peakAssignmentType) {
+    function getMatchingPeak(peakIndex, allPeaks, ionmz, massTolerance, toleranceUnit, peakAssignmentType) {
 
         var bestDistance;
         var bestPeak;
+        var tolerantPeakMin = ionmz - massTolerance;
+        var tolerantPeakMax = ionmz + massTolerance;
+
         for (var j = peakIndex; j < allPeaks.length; j += 1) {
 
             var peak = allPeaks[j];
 
+            if(toleranceUnit === massErrorTypePpm)
+            {
+                var tolerance = (massTolerance * peak[0])/1000000;
+                tolerantPeakMin = ionmz - tolerance;
+                tolerantPeakMax = ionmz + tolerance;
+            }
             // peak is before the current ion we are looking at
-            if (peak[0] < ionmz - massTolerance)
+            if (peak[0] < tolerantPeakMin)
                 continue;
 
             // peak is beyond the current ion we are looking at
-            if (peak[0] > ionmz + massTolerance) {
+            if (peak[0] > tolerantPeakMax) {
                 peakIndex = j;
                 break;
             }
@@ -2242,7 +2295,7 @@
 
 		myTable += '</td> </tr> ';
 		
-		// mass type, mass tolerance etc.
+		// mass type
 		myTable += '<tr><td class="optionCell"> ';
 		myTable += '<div> Mass Type:<br/> ';
 		myTable += '<nobr> ';
@@ -2256,9 +2309,25 @@
         myTable += '/><span style="font-weight: bold;">Avg</span> ';
 		myTable += '</nobr> ';
 		myTable += '</div> ';
+        // mass tolerance
 		myTable += '<div style="margin-top:10px;"> ';
-		myTable += '<nobr>Mass Tol: <input id="'+getElementId(container, elementIds.massError)+'" type="text" value="'+options.massError+'" style="width:3em;"/>Th</nobr> ';
-		myTable += '</div> ';
+		myTable += '<nobr>';
+        myTable += 'Mass Tol: <input id="'+getElementId(container, elementIds.massError)+'" type="text" value="'+options.massError+'" style="width:3em;"/>';
+		myTable += '</nobr>';
+        myTable += '<br>';
+        myTable += '<input type="radio" name="'+getRadioName(container, "massErrorUnit")+'" value="' + massErrorTypeTh + '"';
+        if(options.massErrorUnit === massErrorTypeTh)
+        {
+            myTable += ' checked = "checked" ';
+        }
+        myTable += '/><span style="font-weight: bold;">' + massErrorTypeTh + '</span> ';
+        myTable += '<input type="radio" name="'+getRadioName(container, "massErrorUnit")+'" value="' + massErrorTypePpm + '"';
+        if(options.massErrorUnit === massErrorTypePpm)
+        {
+            myTable += ' checked = "checked" ';
+        }
+        myTable += '/><span style="font-weight: bold;">' + massErrorTypePpm + '</span> ';
+        myTable += '</div> ';
 		myTable += '<div style="margin-top:10px;" align="center"> ';
 		myTable += '<input id="'+getElementId(container, elementIds.update)+'" type="button" value="Update"/> ';
 		myTable += '</div> ';
