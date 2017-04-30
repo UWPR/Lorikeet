@@ -130,14 +130,14 @@ Ion.getSeriesIon = function _getSeriesIon(ion, peptide, idxInSeq, massType) {
 }
 
 function _makeIonLabel(type, index, charge) {
-	var label = type+""+index;
-	for(var i = 1; i <= charge; i+=1) 
-		label += "+";
-	return label;
+    var label = type+""+index;
+    for(var i = 1; i <= charge; i+=1) 
+	label += "+";
+    return label;
 }
 
 function _getMz(neutralMass, charge) {
-	return ( neutralMass + (charge * MASS_PROTON) ) / charge;
+    return ( neutralMass + (charge * MASS_PROTON) ) / charge;
 }
 
 Ion.AmmoniaLossMass_mono = MASS_H_1 * 3 + MASS_N_14;
@@ -147,17 +147,17 @@ Ion.WaterLossMass_mono = MASS_H_1 * 2 + MASS_O_16;
 Ion.WaterLossMass_avg = MASS_H * 2 + MASS_O;
 
 Ion.PhosphoLossMass_mono = MASS_H_1 * 3 + MASS_P_31 + MASS_O_16 * 4;
-Ion.PhosphoLossMass_avg = MASS_H * 2 + MASS_P + MASS_O;
+Ion.PhosphoLossMass_avg = MASS_H * 3 + MASS_P + MASS_O * 4;
 
 function _getIonMzWithLoss(sion, neutralLosses, massType) {
-	var neutralMass = (sion.mz * sion.charge) - (sion.charge * MASS_PROTON);
+    var neutralMass = (sion.mz * sion.charge) - (sion.charge * MASS_PROTON);
     var lossMass = 0;
     if(neutralLosses)
-    {
-        if(massType == 'mono') lossMass += neutralLosses.getTotalLossMass('mono');
-        else if(massType == 'avg') lossMass += neutralLosses.getTotalLossMass('avg');
-    }
-	return _getMz((neutralMass - lossMass), sion.charge);
+	{
+	    if(massType == 'mono') lossMass += neutralLosses.getTotalLossMass('mono');
+	    else if(massType == 'avg') lossMass += neutralLosses.getTotalLossMass('avg');
+	}
+    return _getMz((neutralMass - lossMass), sion.charge);
 }
 
 Ion.getMz = _getMz;
@@ -172,7 +172,7 @@ function Ion_A (peptide, endIdxPlusOne, charge, massType) {
 		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n") - (MASS_C + MASS_O);
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-    this.fragmentIndex = endIdxPlusOne;
+	this.fragmentIndex = endIdxPlusOne;
 	this.label = _makeIonLabel("a",this.fragmentIndex, charge);
 	this.match = false;
 	this.term = "n";
@@ -188,7 +188,7 @@ function Ion_B (peptide, endIdxPlusOne, charge, massType) {
 		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n");
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-    this.fragmentIndex = endIdxPlusOne;
+	this.fragmentIndex = endIdxPlusOne;
 	this.label = _makeIonLabel("b", this.fragmentIndex, charge);
 	this.match = false;
 	this.term = "n";
@@ -204,7 +204,7 @@ function Ion_C (peptide, endIdxPlusOne, charge, massType) {
 		mass = peptide.getSeqMassAvg(endIdxPlusOne, "n") + MASS_H + (MASS_N + 2*MASS_H);
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-    this.fragmentIndex = endIdxPlusOne;
+	this.fragmentIndex = endIdxPlusOne;
 	this.label = _makeIonLabel("c", this.fragmentIndex, charge);
 	this.match = false;
 	this.term = "n";
@@ -220,7 +220,7 @@ function Ion_X (peptide, startIdx, charge, massType) {
 		mass = peptide.getSeqMassAvg(startIdx, "c") + 2*MASS_O + MASS_C;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-    this.fragmentIndex = peptide.sequence().length - startIdx;
+	this.fragmentIndex = peptide.sequence().length - startIdx;
 	this.label = _makeIonLabel("x", this.fragmentIndex, charge);
 	this.match = false;
 	this.term = "c";
@@ -236,8 +236,8 @@ function Ion_Y (peptide, startIdx, charge, massType) {
 		mass = peptide.getSeqMassAvg(startIdx, "c") + 2*MASS_H + MASS_O;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-    this.fragmentIndex = peptide.sequence().length - startIdx;
-    this.label = _makeIonLabel("y", this.fragmentIndex, charge);
+	this.fragmentIndex = peptide.sequence().length - startIdx;
+	this.label = _makeIonLabel("y", this.fragmentIndex, charge);
 	this.match = false;
 	this.term = "c";
 	return this;
@@ -253,7 +253,7 @@ function Ion_Z (peptide, startIdx, charge, massType) {
 		mass = peptide.getSeqMassAvg(startIdx, "c") + MASS_O - MASS_N;
 	this.charge = charge;
 	this.mz = _getMz(mass, charge);
-    this.fragmentIndex = peptide.sequence().length - startIdx;
+	this.fragmentIndex = peptide.sequence().length - startIdx;
 	this.label = _makeIonLabel("z", this.fragmentIndex, charge);
 	this.match = false;
 	this.term = "c";

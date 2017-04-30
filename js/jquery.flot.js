@@ -1682,7 +1682,7 @@ Licensed under the MIT license.
             }
             axis.min = min;
             axis.max = max;
-            console.log(placeholder.height);
+            // console.log(placeholder.height);
 
             // add extra space for labels to axis.max if this is the y-axis.
 //            if(axis.direction == "y" && options.series.peaks.show) {

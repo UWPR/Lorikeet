@@ -17,6 +17,8 @@
                 peakDetect: true,
                 calculatedMz: null,
                 precursorMz: null,
+                selWinLow: null,
+                selWinHigh: null,
                 precursorIntensity: null,
                 staticMods: [],
                 variableMods: [],
@@ -310,7 +312,7 @@
         if(options.showZ.length > 0)
         {
             userDefined = true;
-            defaultSelected['z'] = options.showZ
+            defaultSelected['z'] = options.showZ;
         }
         if(!userDefined)
         {
@@ -446,13 +448,19 @@
 		// the MS/MS plot should have been created by now.  This is a hack to get the plots aligned.
 		// We will set the y-axis labelWidth to this value.
 		var labelWidth = container.data("plot").getAxes().yaxis.labelWidth;
-		
+
+        var precursorSelectionWin = [];
+        if(options.selWinLow && options.selWinHigh)
+        {
+            precursorSelectionWin = [{ color:"#ccd8e2", xaxis:{from:options.selWinLow, to:options.selWinHigh}, }];
+        }
 		var ms1plotOptions = {
 				series: { peaks: {show: true, shadowSize: 0}, shadowSize: 0},
 				grid: { show: true, 
 						hoverable: true, 
 						autoHighlight: true,
 						clickable: true,
+                        markings: precursorSelectionWin,
 						borderWidth: 1,
 						labelMargin: 1},
 				selection: { mode: "xy", color: "#F0E68C" },
@@ -795,7 +803,7 @@
 		// PEAK ASSIGNMENT TYPE CHANGED; PEAK LABEL TYPE CHANGED
 		var ionChoiceContainer = $(getElementSelector(container, elementIds.ion_choice));
 		ionChoiceContainer.find("input").click(function() {
-            plotAccordingToChoices(container)
+            plotAccordingToChoices(container);
         });
 
         $(getElementSelector(container, elementIds.immoniumIons)).click(function() {
@@ -1107,7 +1115,7 @@
                                 {mass:120.0813, aa:'F'},
                                 {mass:101.0715, aa:'Q'},
                                 {mass:136.0762, aa:'Y'},
-                                {mass:159.0922, aa:'W'}]
+                                {mass:159.0922, aa:'W'}];
 
         var immoniumIonMatches = [];
         var labels = [];
@@ -1124,23 +1132,56 @@
         container.data("immoniumIons", {data: immoniumIonMatches, labels: labels, color: "#008000"});
     }
 
-    function calculatePrecursorPeak(container)
-    {
+    function calculatePrecursorPeak(container) {
         var options = container.data("options");
-        if(options.labelPrecursorPeak && options.theoreticalMz)
-        {
+
+        if(options.labelPrecursorPeak && options.theoreticalMz) {
+            var precursorMzMatches = [];
+            var labels = [];
+
             var peaks = options.peaks;
             var precursorMz = options.theoreticalMz;
+            var peptide = options.peptide;
+            var charge = options.charge ? options.charge : 1;
+            var label = 'M';
+            for(var i = 0; i < charge; i += 1) label += "+";
+
             var match = getMatchingPeakForMz(container, peaks, precursorMz);
-            if(match.bestPeak)
-            {
-                var label = 'M';
-                if(options.charge)
-                {
-                    for(var i = 0; i < options.charge; i += 1) label += "+";
-                }
-                container.data("precursorPeak", {data: [[match.bestPeak[0], match.bestPeak[1]]], labels: [label], color: "#ffd700"})
+            if(match.bestPeak) {
+                precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
+                labels.push(label);
             }
+
+            // neutral losses...
+            for(var lossKey in peptide.lorikeetPotentialLosses) {
+                var loss = peptide.lorikeetPotentialLosses[lossKey];
+                if(!loss)
+                    continue;
+
+                //console.log("L-loss:"+lossKey+" -- Label:"+loss.label());
+
+                match = getMatchingPeakForMz(container, peaks, precursorMz-loss.monoLossMass/charge);
+                if(match.bestPeak) {
+                    precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
+                    labels.push(label+" "+loss.label());
+                }
+            }
+            for(var lossKey in peptide.customPotentialLosses) {
+                var loss = peptide.customPotentialLosses[lossKey];
+                if(!loss)
+                    continue;
+
+                //console.log("C-loss:"+lossKey+" -- Label:"+loss.label()); //+" -- Num:"+LossCombinationList(3).getLossCombinationCount());
+
+                match = getMatchingPeakForMz(container, peaks, precursorMz-loss.monoLossMass/charge);
+                if(match.bestPeak) {
+                    precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
+                    labels.push(label+" "+loss.label());
+                }
+            }
+
+            if (precursorMzMatches.length > 0)
+                container.data("precursorPeak", {data: precursorMzMatches, labels: labels, color: "#ffd700"});
         }
     }
 
@@ -1872,8 +1913,8 @@
 		var ctermIons = getSelectedCtermIons(selectedIonTypes);
 		
 		var myTable = '' ;
-		myTable += '<table id="'+getElementId(container, elementIds.ionTable)+'" cellpadding="2" class="font_small '+elementIds.ionTable+'">' ;
-		myTable +=  "<thead>" ;
+		myTable += '<table id="'+getElementId(container, elementIds.ionTable)+'" cellpadding="2" class="font_small '+elementIds.ionTable+'">';
+		myTable +=  "<thead>";
 		myTable +=   "<tr>";
 
 		// nterm ions
@@ -1887,10 +1928,10 @@
 		for(var i = 0; i < ctermIons.length; i += 1) {
 			myTable +=    "<th>" +ctermIons[i].label+  "</th>"; 
 		}
-		myTable +=   "</tr>" ;
-		myTable +=  "</thead>" ;
+		myTable +=   "</tr>";
+		myTable +=  "</thead>";
 		
-		myTable +=  "<tbody>" ;
+		myTable +=  "<tbody>";
 
         var ionSeries = container.data("ionSeries");
 
@@ -1941,7 +1982,7 @@
 			}
 			
 		}
-		myTable +=   "</tr>" ;
+		myTable +=   "</tr>";
 		
 		myTable += "</tbody>";
 		myTable += "</table>";
@@ -2280,12 +2321,12 @@
         myTable+= '<input type="checkbox" value="true" ';
         if(options.labelImmoniumIons == true)
         {
-            myTable+=checked="checked"
+            myTable+=checked="checked";
         }
         myTable+= ' id="'+getElementId(container, elementIds.immoniumIons)+'"/><span style="font-weight:bold;">Immonium ions</span>';
 
         // Reporter ions
-        myTable += "<br/>"
+        myTable += "<br/>";
         myTable+= '<input type="checkbox" value="true" ';
         if(options.labelReporters == true)
         {
@@ -2341,7 +2382,7 @@
         myTable+= '<input type="checkbox" value="true" ';
         if(options.peakDetect == true)
         {
-            myTable+=checked="checked"
+            myTable+=checked="checked";
         }
         myTable+= ' id="'+getElementId(container, elementIds.peakDetect)+'"/><span style="font-weight:bold;">Peak Detect</span>';
 		myTable+= '</div> ';
