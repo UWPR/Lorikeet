@@ -29,6 +29,7 @@ supported in the current versions of IE. It should be supported in IE9.
 For the viewer to work on IE the ExplorerCanvas script has to be included in the page.
 This script brings the canvas functionality to IE. 
 
+    <%--  Only load the excanvas.min.js if it is IE 8 or lower.  IE 8 does not support HTML5 so this is a way to have HTML5 canvas support --%>
     <!--[if IE]><script language="javascript" type="text/javascript" src="../js/excanvas.min.js"></script><![endif]-->
 
 
