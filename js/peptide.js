@@ -178,7 +178,7 @@ function Peptide(seq, staticModifications, varModifications, ntermModification, 
         // Example: {avgLossMass: "97.995", monoLossMass: "97.977", formula: "H3PO4"}
         if(loss && loss.avgLossMass && loss.avgLossMass > 0.0 && loss.monoLossMass && loss.monoLossMass > 0.0)
         {
-            var neutralLoss = new NeutralLoss(loss.avgLossMass, loss.monoLossMass, loss.formula, loss.label);
+            var neutralLoss = new NeutralLoss(loss.monoLossMass, loss.avgLossMass, loss.formula, loss.label);
             potentialLossesAtIndex[index].push(neutralLoss);
             potentialLosses_custom[neutralLoss.label()] = neutralLoss;
         }
