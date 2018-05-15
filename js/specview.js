@@ -2240,7 +2240,7 @@
         myContent += '<input id="'+getElementId(container, elementIds.massErrorPlot_option)+'" type="checkbox" ';
         if(options.showMassErrorPlot === true)
         {
-            myContent += 'checked="checked"';
+            myContent += ' checked="checked"';
         }
         myContent += '>Plot mass error ';
         myContent += '</nobr>';
@@ -2321,7 +2321,7 @@
         myTable+= '<input type="checkbox" value="true" ';
         if(options.labelImmoniumIons == true)
         {
-            myTable+=checked="checked";
+            myTable+=' checked="checked"';
         }
         myTable+= ' id="'+getElementId(container, elementIds.immoniumIons)+'"/><span style="font-weight:bold;">Immonium ions</span>';
 
@@ -2330,7 +2330,7 @@
         myTable+= '<input type="checkbox" value="true" ';
         if(options.labelReporters == true)
         {
-            myTable+=checked="checked";
+            myTable+=' checked="checked"';
         }
         myTable+= ' id="'+getElementId(container, elementIds.reporterIons)+'"/><span style="font-weight:bold;">Reporter ions</span>';
 
@@ -2382,7 +2382,7 @@
         myTable+= '<input type="checkbox" value="true" ';
         if(options.peakDetect == true)
         {
-            myTable+=checked="checked";
+            myTable+=' checked="checked"';
         }
         myTable+= ' id="'+getElementId(container, elementIds.peakDetect)+'"/><span style="font-weight:bold;">Peak Detect</span>';
 		myTable+= '</div> ';
@@ -2423,7 +2423,7 @@
         for (var i = 0; i < charges.length; i += 1)
         {
             var id = ionLabel + "_" + charges[i];
-            var checked = (selected[i] && selected[i] == 1) ? 'checked="checked"' : "";
+            var checked = (selected[i] && selected[i] == 1) ? ' checked="checked"' : "";
             ionRow += '<input type="checkbox" value="' + charges[i] + '" id="' + id + '" ' + checked + '/>' + charges[i] + '<sup>+</sup> ';
         }
         ionRow += '</nobr> ';
