@@ -57,7 +57,7 @@
                 // Use these option to set the x-axis range (m/z) that will be displayed when the MS/MS plot is initialized or is fully zoomed out.
                 // Default range is the min and max peak m/z.
                 minDisplayMz: null,
-                maxDisplayMz: null
+	            maxDisplayMz: null
         };
 			
 	    var options = $.extend(true, {}, defaults, opts); // this is a deep copy
@@ -112,7 +112,8 @@
             seqinfo: "seqinfo",
             peakDetect: "peakDetect",
             immoniumIons: "immoniumIons",
-            reporterIons: "reporterIons"
+	        reporterIons: "reporterIons",
+	        anticInfo: "anticInfo"
 	};
 
     function getElementId(container, elementId){
@@ -362,9 +363,14 @@
         container.data("zoomRange", null);      // for zooming MS/MS plot
         container.data("ms1zoomRange", null);
         container.data("previousPoint", null);  // for tooltips
-        container.data("ionSeries", {a: [], b: [], c: [], x: [], y: [], z: []});
+        container.data("ionSeries", {a: [], b: [], c: [], x: [], y: [], z: []}); // theoretical ion series
         container.data("ionSeriesLabels", {a: [], b: [], c: [], x: [], y: [], z: []});
         container.data("ionSeriesMatch", {a: [], b: [], c: [], x: [], y: [], z: []});
+        container.data("ionSeriesAntic", {a: [], b: [], c: [], x: [], y: [], z: []}); // total annotated ion current
+        container.data("anticPrecursor", 0); // total annotated ion current: precursor peak
+        container.data("anticImmonium", 0); // total annotated ion current: immonium ions
+        container.data("anticReporter", 0); // total annotated ion current: reporter ions
+
 
         var maxInt = getMaxInt(options);
         var __xrange = getPlotXRange(options);
@@ -1046,7 +1052,7 @@
 
         var options = container.data("options");
 
-		 // selected ions
+        // selected ions
 		var selectedIonTypes = getSelectedIonTypes(container);
 		
 		calculateTheoreticalSeries(container, selectedIonTypes);
@@ -1103,6 +1109,7 @@
     function calculateImmoniumIons(container)
     {
         var options = container.data("options");
+        var antic = 0;
 
         var peaks = options.peaks;
 
@@ -1127,13 +1134,16 @@
             {
                 immoniumIonMatches.push([match.bestPeak[0], match.bestPeak[1]]);
                 labels.push(ion.aa + '-' + match.bestPeak[0].toFixed(1));
+			    antic += match.bestPeak[1];
             }
         }
+        container.data("anticImmonium", antic);
         container.data("immoniumIons", {data: immoniumIonMatches, labels: labels, color: "#008000"});
     }
 
     function calculatePrecursorPeak(container) {
         var options = container.data("options");
+        var antic = 0;
 
         if(options.labelPrecursorPeak && options.theoreticalMz) {
             var precursorMzMatches = [];
@@ -1150,6 +1160,7 @@
             if(match.bestPeak) {
                 precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
                 labels.push(label);
+		        antic += match.bestPeak[1];
             }
 
             // neutral losses...
@@ -1164,6 +1175,7 @@
                 if(match.bestPeak) {
                     precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
                     labels.push(label+" "+loss.label());
+		            antic += match.bestPeak[1];
                 }
             }
             for(var lossKey in peptide.customPotentialLosses) {
@@ -1177,17 +1189,20 @@
                 if(match.bestPeak) {
                     precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
                     labels.push(label+" "+loss.label());
+		            options.antic += match.bestPeak[1];
                 }
             }
 
             if (precursorMzMatches.length > 0)
                 container.data("precursorPeak", {data: precursorMzMatches, labels: labels, color: "#ffd700"});
         }
+
+        container.data("anticPrecursor", antic);
     }
 
     function calculateReporterIons(container)
     {
-        var options = container.data("options");
+        container.data("anticReporter", 0);
 
         var itraqWholeLabel = 145.1069;
         var itraqIons = [113.107325, 114.11068, 115.107715, 116.111069, 117.114424, 118.111459, 119.114814, 121.121524];
@@ -1206,7 +1221,7 @@
             reporterSeries[i].matches = matches;
         }
 
-            container.data("reporterSeries", reporterSeries);
+        container.data("reporterSeries", reporterSeries);
     }
 
     function calculateReporters(seriesInfo, container)
@@ -1216,12 +1231,14 @@
         var options = container.data("options");
         var peaks = options.peaks;
         var matches = [];
+        var antic = container.data("anticReporter");
         for(var i = 0; i < ionMzArray.length; i += 1)
         {
             var match = getMatchingPeakForMz(container, peaks, ionMzArray[i]);
             if(match.bestPeak)
             {
                 matches.push([match.bestPeak[0], match.bestPeak[1]]);
+			    antic += match.bestPeak[1];
             }
         }
         var labels = [];
@@ -1244,8 +1261,10 @@
         {
             matches.push([match.bestPeak[0], match.bestPeak[1]]);
             labels.push('nterm');
+		    antic += match.bestPeak[1];
         }
 
+        container.data("anticReporter", antic);
         if(matches.length > 0)
         {
             return {data: matches, labels: labels, color:seriesInfo.color};
@@ -1321,6 +1340,11 @@
 	// ---------------------------------------------------------
 	function calculateTheoreticalSeries(container, selectedIons) {
 
+        if(container.data("massTypeChanged"))
+        {
+            // Clear out the theoretical ion series if the selected mass type changed.
+            container.data("ionSeries", {a: [], b: [], c: [], x: [], y: [], z: []});
+        }
 		if(selectedIons) {
 		
 			var todoIonSeries = [];
@@ -1329,7 +1353,7 @@
 			for(var i = 0; i < selectedIons.length; i += 1) {
 				var sion = selectedIons[i];
 				if(sion.type == "a") {
-					if(!container.data("massTypeChanged") && ionSeries.a[sion.charge])	continue; // already calculated
+					if(ionSeries.a[sion.charge])	continue; // already calculated
 					else {
 						todoIonSeries.push(sion);
 						ionSeries.a[sion.charge] = [];
@@ -1337,7 +1361,7 @@
 					}
 				}
 				if(sion.type == "b") {
-					if(!container.data("massTypeChanged") && ionSeries.b[sion.charge])	continue; // already calculated
+					if(ionSeries.b[sion.charge])	continue; // already calculated
 					else {
 						todoIonSeries.push(sion);
 						ionSeries.b[sion.charge] = [];
@@ -1345,7 +1369,7 @@
 					}
 				}
 				if(sion.type == "c") {
-					if(!container.data("massTypeChanged") && ionSeries.c[sion.charge])	continue; // already calculated
+					if(ionSeries.c[sion.charge])	continue; // already calculated
 					else {
 						todoIonSeries.push(sion);
 						ionSeries.c[sion.charge] = [];
@@ -1353,7 +1377,7 @@
 					}
 				}
 				if(sion.type == "x") {
-					if(!container.data("massTypeChanged") && ionSeries.x[sion.charge])	continue; // already calculated
+					if(ionSeries.x[sion.charge])	continue; // already calculated
 					else {
 						todoIonSeries.push(sion);
 						ionSeries.x[sion.charge] = [];
@@ -1361,7 +1385,7 @@
 					}
 				}
 				if(sion.type == "y") {
-					if(!container.data("massTypeChanged") && ionSeries.y[sion.charge])	continue; // already calculated
+					if(ionSeries.y[sion.charge])	continue; // already calculated
 					else {
 						todoIonSeries.push(sion);
 						ionSeries.y[sion.charge] = [];
@@ -1369,7 +1393,7 @@
 					}
 				}
 				if(sion.type == "z") {
-					if(!container.data("massTypeChanged") && ionSeries.z[sion.charge])	continue; // already calculated
+					if(ionSeries.z[sion.charge])	continue; // already calculated
 					else {
 						todoIonSeries.push(sion);
 						ionSeries.z[sion.charge] = [];
@@ -1423,16 +1447,30 @@
 	// MATCH THEORETICAL MASSES WITH PEAKS IN THE SCAN
 	// -----------------------------------------------
 	function recalculate(container) {
-        return (container.data("massErrorChanged") ||
-				container.data("massTypeChanged") ||
-				container.data("peakAssignmentTypeChanged") ||
-				container.data("selectedNeutralLossChanged"));
+	    return (container.data("massErrorChanged") ||
+	    		container.data("massTypeChanged") ||
+	    		container.data("peakAssignmentTypeChanged") ||
+	    		container.data("selectedNeutralLossChanged"));
 	}
+
+	function clearIonSeries(container)
+    {
+        container.data("ionSeriesMatch", {a: [], b: [], c: [], x: [], y: [], z: []});
+        container.data("ionSeriesLabels", {a: [], b: [], c: [], x: [], y: [], z: []});
+        container.data("ionSeriesAntic", {a: [], b: [], c: [], x: [], y: [], z: []});
+    }
 
 	function getSeriesMatches(container, selectedIonTypes) {
 		
 		var dataSeries = [];
-		
+
+        if(recalculate(container))
+        {
+            // If mass type, mass error, peak assignment or selected neutral losses have changed
+            // all peak series should be recalculated.
+            clearIonSeries(container);
+        }
+
 		var peakAssignmentType = getPeakAssignmentType(container);
 		var peakLabelType = container.find("input[name='"+getRadioName(container, "peakLabelOpt")+"']:checked").val();
         var massType = getMassType(container);
@@ -1441,88 +1479,90 @@
         var ionSeriesMatch = container.data("ionSeriesMatch");
         var ionSeries = container.data("ionSeries");
         var ionSeriesLabels = container.data("ionSeriesLabels");
-        var options = container.data("options");
+        var ionSeriesAntic = container.data("ionSeriesAntic");
         var massError = container.data("options").massError;
         var peaks = getPeaks(container);
+
+
 
 		for(var j = 0; j < selectedIonTypes.length; j += 1) {
 		
 			var ion = selectedIonTypes[j];
-							
+
 			
 			if(ion.type == "a") {
-				if(recalculate(container) || !ionSeriesMatch.a[ion.charge]) { // re-calculate only if mass error has changed OR
-																		// matching peaks for this series have not been calculated
+				if(!ionSeriesMatch.a[ion.charge]) { // re-calculate only if matching peaks for this series have not been calculated already
 					// calculated matching peaks
 					var adata = calculateMatchingPeaks(container, ionSeries.a[ion.charge], peaks, massError, massErrorUnit, peakAssignmentType, massType);
 					if(adata && adata.length > 0) {
 						ionSeriesMatch.a[ion.charge] = adata[0];
 						ionSeriesLabels.a[ion.charge] = adata[1];
+						ionSeriesAntic.a[ion.charge] = adata[2];
 					}
 				}
 				dataSeries.push({data: ionSeriesMatch.a[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.a[ion.charge]});
 			}
 			
 			if(ion.type == "b") {
-				if(recalculate(container) || !ionSeriesMatch.b[ion.charge]) { // re-calculate only if mass error has changed OR
-																		// matching peaks for this series have not been calculated
+				if(!ionSeriesMatch.b[ion.charge]) { // re-calculate only if matching peaks for this series have not been calculated already
 					// calculated matching peaks
 					var bdata = calculateMatchingPeaks(container, ionSeries.b[ion.charge], peaks, massError, massErrorUnit, peakAssignmentType, massType);
 					if(bdata && bdata.length > 0) {
 						ionSeriesMatch.b[ion.charge] = bdata[0];
 						ionSeriesLabels.b[ion.charge] = bdata[1];
+                        ionSeriesAntic.b[ion.charge] = bdata[2];
 					}
 				}
 				dataSeries.push({data: ionSeriesMatch.b[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.b[ion.charge]});
 			}
 			
 			if(ion.type == "c") {
-				if(recalculate(container) || !ionSeriesMatch.c[ion.charge]) { // re-calculate only if mass error has changed OR
-																		// matching peaks for this series have not been calculated
+				if(!ionSeriesMatch.c[ion.charge]) { // re-calculate only if matching peaks for this series have not been calculated already
 					// calculated matching peaks
 					var cdata = calculateMatchingPeaks(container, ionSeries.c[ion.charge], peaks, massError, massErrorUnit, peakAssignmentType, massType);
 					if(cdata && cdata.length > 0) {
 						ionSeriesMatch.c[ion.charge] = cdata[0];
 						ionSeriesLabels.c[ion.charge] = cdata[1];
+                        ionSeriesAntic.c[ion.charge] = cdata[2];
 					}
 				}
 				dataSeries.push({data: ionSeriesMatch.c[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.c[ion.charge]});
 			}
 			
 			if(ion.type == "x") {
-				if(recalculate(container) || !ionSeriesMatch.x[ion.charge]) { // re-calculate only if mass error has changed OR
-																		// matching peaks for this series have not been calculated
+				if(!ionSeriesMatch.x[ion.charge]) { // re-calculate only if matching peaks for this series have not been calculated already
 					// calculated matching peaks
 					var xdata = calculateMatchingPeaks(container, ionSeries.x[ion.charge], peaks, massError, massErrorUnit, peakAssignmentType, massType);
 					if(xdata && xdata.length > 0) {
 						ionSeriesMatch.x[ion.charge] = xdata[0];
 						ionSeriesLabels.x[ion.charge] = xdata[1];
+                        ionSeriesAntic.x[ion.charge] = xdata[2];
 					}
 				}
 				dataSeries.push({data: ionSeriesMatch.x[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.x[ion.charge]});
 			}
 			
 			if(ion.type == "y") {
-				if(recalculate(container) || !ionSeriesMatch.y[ion.charge]) { // re-calculate only if mass error has changed OR
-																		// matching peaks for this series have not been calculated
+				if(!ionSeriesMatch.y[ion.charge]) { // re-calculate only if matching peaks for this series have not been calculated already
 					// calculated matching peaks
 					var ydata = calculateMatchingPeaks(container, ionSeries.y[ion.charge], peaks, massError, massErrorUnit, peakAssignmentType, massType);
 					if(ydata && ydata.length > 0) {
 						ionSeriesMatch.y[ion.charge] = ydata[0];
 						ionSeriesLabels.y[ion.charge] = ydata[1];
+                        ionSeriesAntic.y[ion.charge] = ydata[2];
 					}
 				}
 				dataSeries.push({data: ionSeriesMatch.y[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.y[ion.charge]});
 			}
 			
 			if(ion.type == "z") {
-				if(recalculate(container) || !ionSeriesMatch.z[ion.charge]) { // re-calculate only if mass error has changed OR
-																		// matching peaks for this series have not been calculated
+				if(!ionSeriesMatch.z[ion.charge]) { // re-calculate only if matching peaks for this series have not been calculated already
 					// calculated matching peaks
 					var zdata = calculateMatchingPeaks(container, ionSeries.z[ion.charge], peaks, massError, massErrorUnit, peakAssignmentType, massType);
 					if(zdata && zdata.length > 0) {
 						ionSeriesMatch.z[ion.charge] = zdata[0];
 						ionSeriesLabels.z[ion.charge] = zdata[1];
+                        ionSeriesAntic.z[ion.charge] = zdata[2];
 					}
 				}
 				dataSeries.push({data: ionSeriesMatch.z[ion.charge], color: ion.color, labelType: peakLabelType, labels: ionSeriesLabels.z[ion.charge]});
@@ -1567,8 +1607,8 @@
 		var matchData = [];
 		matchData[0] = []; // peaks
 		matchData[1] = []; // labels -- ions;
-
-        var peptide = container.data("options").peptide;
+        matchData[2] = 0;  // Annotated ion current for this series.
+	    var peptide = container.data("options").peptide;
 
 		for(var i = 0; i < ionSeries.length; i += 1) {
 			
@@ -1578,7 +1618,7 @@
             var minIndex = Number.MAX_VALUE;
             var neutralLossOptions = peptide.getPotentialLosses(sion);
 
-            var index = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, massErrorUnit, peakAssignmentType, null, massType);
+	        var index = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, massErrorUnit, peakAssignmentType, null, massType);
             minIndex = Math.min(minIndex, index);
 
             for(var n = 1; n < neutralLossOptions.length; n += 1)
@@ -1587,7 +1627,7 @@
                 for(var k = 0; k < loss_options_with_n_losses.lossCombinationCount(); k += 1)
                 {
                     var lossCombination = loss_options_with_n_losses.getLossCombination(k);
-                    var index = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, massErrorUnit, peakAssignmentType, lossCombination, massType);
+			        var index = getMatchForIon(sion, matchData, allPeaks, peakIndex, massTolerance, massErrorUnit, peakAssignmentType, lossCombination, massType);
                     minIndex = Math.min(minIndex, index);
                 }
             }
@@ -1620,6 +1660,7 @@
             // console.log("found match "+sion.label+", "+ionmz+";  peak: "+bestPeak[0] + "; theoreticalMz: " + __ret.theoreticalMz);
             matchData[0].push([bestPeak[0], bestPeak[1], __ret.theoreticalMz]);
             matchData[1].push(peakLabel);
+            matchData[2] = matchData[2] + bestPeak[1];
             if(!neutralLosses) {
                 sion.match = true;
             }
@@ -1856,8 +1897,10 @@
             parentTable += '<td rowspan="'+rowspan+'" valign="top" id="'+getElementId(container, elementIds.ionTableLoc1)+'" > ';
             parentTable += '<div id="'+getElementId(container, elementIds.ionTableDiv)+'">';
             parentTable += '<span id="'+getElementId(container, elementIds.moveIonTable)+'" class="font_small link">[Click]</span> <span class="font_small">to move table</span>';
+            // placeholder for annotated ion current value
+            parentTable += '<div id="'+getElementId(container, elementIds.anticInfo)+'" style="margin-top:5px;"></div> ';
             // placeholder for modifications
-            parentTable += '<div id="'+getElementId(container, elementIds.modInfo)+'" style="margin-top:5px;"></div> ';
+            parentTable += '<div id="'+getElementId(container, elementIds.modInfo)+'" style="margin-top:20px;"></div> ';
             parentTable += '</div> ';
             parentTable += '</td> ';
             parentTable += '</tr> ';
@@ -1995,6 +2038,7 @@
 			options.sizeChangeCallbackFunction();
 		}
 
+        showAnticInfo(container); // Total annotated ion current
 	}
 	
 	function getCalculatedSeries(ionSeries, ion) {
@@ -2135,10 +2179,10 @@
 			
 		modInfo += '<div>';
 		if(options.ntermMod || options.ntermMod > 0) {
-			modInfo += 'Add to N-term: <b>'+options.ntermMod+'</b>';
+			modInfo += 'Add to N-term: <b>'+round(options.ntermMod)+'</b>';
 		}
 		if(options.ctermMod || options.ctermMod > 0) {
-			modInfo += 'Add to C-term: <b>'+options.ctermMod+'</b>';
+			modInfo += 'Add to C-term: <b>'+round(options.ctermMod)+'</b>';
 		}
 		modInfo += '</div>';
 		
@@ -2211,6 +2255,36 @@
 	}
 	
 	//---------------------------------------------------------
+    // ANTIC INFO
+    //---------------------------------------------------------
+    function showAnticInfo (container) {
+
+        var antic = container.data("anticPrecursor");
+        if(labelImmoniumIons(container))
+        {
+            antic += container.data("anticImmonium");
+        }
+        if(labelReporterIons(container))
+        {
+            antic += container.data("anticReporter");
+        }
+        // selected ions
+        var selectedIons = getSelectedIonTypes(container);
+        var ionSeriesAntic = container.data("ionSeriesAntic");
+        for(var i = 0; i < selectedIons.length; i += 1)
+        {
+            var sion = selectedIons[i];
+            antic += ionSeriesAntic[sion.type][sion.charge];
+        }
+
+	    var anticInfo = '<div id="'+getElementId(container, elementIds.anticInfo)+'" style="margin-top:5px;">';
+	    anticInfo += 'Annotated Ion Current: ';
+	    anticInfo += "<div><b>"+round(antic)+"</b></div>";
+	    anticInfo += '</div>';
+
+	    $(getElementSelector(container, elementIds.anticInfo)).replaceWith(anticInfo);
+    }
+    //---------------------------------------------------------
 	// VIEWING OPTIONS TABLE
 	//---------------------------------------------------------
 	function makeViewingOptions(container) {
