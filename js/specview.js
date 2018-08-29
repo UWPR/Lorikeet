@@ -111,6 +111,7 @@
             fileinfo: "fileinfo",
             seqinfo: "seqinfo",
             peakDetect: "peakDetect",
+	        labelPrecursor: "labelPrecursor",
             immoniumIons: "immoniumIons",
 	        reporterIons: "reporterIons",
 	        anticInfo: "anticInfo"
@@ -200,7 +201,7 @@
             showModInfo(container, options);
         }
 
-        // calculate precursor peak label
+        // calculate precursor ions
         calculatePrecursorPeak(container);
 
         // calculate immonium ions
@@ -421,7 +422,7 @@
         var options = container.data("options");
    		var me = parseFloat($(getElementSelector(container, elementIds.massError)).val());
         var unit = getMassErrorUnit(container);
-		if(me != options.massError) {
+		if(me !== options.massError) {
             options.massError = me;
 			container.data("massErrorChanged", true);
 		}
@@ -775,11 +776,7 @@
 		$(getElementSelector(container, elementIds.update)).click(function() {
 			container.data("zoomRange", null); // zoom out fully
 			setMassError(container);
-            calculatePrecursorPeak(container);
-            calculateImmoniumIons(container);
-            calculateReporterIons(container);
-			createPlot(container, getDatasets(container));
-			makeIonTable(container);
+            plotAccordingToChoices(container);
 	   	});
 		
 		// TOOLTIPS
@@ -820,13 +817,17 @@
             plotAccordingToChoices(container);
         });
 
+        $(getElementSelector(container, elementIds.labelPrecursor)).click(function() {
+		    plotAccordingToChoices(container);
+	    });
+
 		// Plot neutral loss options
 		var neutralLossContainer = $(getElementSelector(container, elementIds.nl_choice));
 		neutralLossContainer.find("input").click(function() {
 			container.data("selectedNeutralLossChanged", true);
             var selectedNeutralLosses = getNeutralLosses(container);
             container.data("options").peptide.recalculateLossOptions(selectedNeutralLosses, container.data("options").maxNeutralLossCount);
-			plotAccordingToChoices(container);
+            plotAccordingToChoices(container);
 		});
 
         // Mass type options
@@ -843,9 +844,6 @@
 
 	    container.find("input[name='"+getRadioName(container, "peakAssignOpt")+"']").click(function() {
 	    	container.data("peakAssignmentTypeChanged", true);
-            calculatePrecursorPeak(container);
-            calculateImmoniumIons(container);
-            calculateReporterIons(container);
 	    	plotAccordingToChoices(container);
 	    });
 
@@ -887,7 +885,6 @@
 		if (data.length > 0) {
             createPlot(container, data);
             makeIonTable(container);
-            showSequenceInfo(container); // update the MH+ and m/z values
         }
     }
 	
@@ -1069,18 +1066,37 @@
         // add immonium ions
         if(labelImmoniumIons(container))
         {
+            // Recalculate if the following have changed: mass error, peak assignment type
+            if(container.data("massErrorChanged") || container.data("peakAssignmentTypeChanged"))
+            {
+                calculateImmoniumIons(container);
+            }
             data.push(container.data("immoniumIons"));
         }
 
         // add precursor peak
-        if(container.data("precursorPeak"))
+        if(labelPrecursorPeak(container))
         {
-            data.push(container.data("precursorPeak"));
+            // Recalculate if the following have changed: mass error, peak assignment type, selected neutral loss
+            // Changing mass type only chanages the fragmentMassType not the precursorMassType, so the labeled precursor peaks will not change.
+            if(container.data("massErrorChanged") || container.data("peakAssignmentTypeChanged") || container.data("selectedNeutralLossChanged"))
+            {
+                calculatePrecursorPeak(container);
+            }
+            if (container.data("precursorPeak"))
+            {
+                data.push(container.data("precursorPeak"));
+            }
         }
 
         // add reporter ions
         if(labelReporterIons(container))
         {
+            // Recalculate if the following have changed: mass error, peak assignment type
+            if(container.data("massErrorChanged") || container.data("peakAssignmentTypeChanged"))
+            {
+                calculateReporterIons(container);
+            }
             var reporterSeries = container.data("reporterSeries");
             for(var i = 0; i < reporterSeries.length; i += 1)
             {
@@ -1095,6 +1111,11 @@
 		}
 		return data;
 	}
+
+    function labelPrecursorPeak(container)
+    {
+        return $(getElementSelector(container, elementIds.labelPrecursor)).is(":checked")
+    }
 
     function labelImmoniumIons(container)
     {
@@ -1151,52 +1172,38 @@
 
             var peaks = options.peaks;
             var precursorMz = options.theoreticalMz;
-            var peptide = options.peptide;
             var charge = options.charge ? options.charge : 1;
             var label = 'M';
-            for(var i = 0; i < charge; i += 1) label += "+";
 
-            var match = getMatchingPeakForMz(container, peaks, precursorMz);
-            if(match.bestPeak) {
-                precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
-                labels.push(label);
-		        antic += match.bestPeak[1];
-            }
+            // Label all possible precursor charge states
+            for (var i = 1; i <= charge; i += 1) {
+                label += "+";
+                var pmz = (((precursorMz - MASS_PROTON) * charge) / i) + MASS_PROTON;
+                //console.log("for charge:"+i+" -- m/z:"+pmz);
 
-            // neutral losses...
-            for(var lossKey in peptide.lorikeetPotentialLosses) {
-                var loss = peptide.lorikeetPotentialLosses[lossKey];
-                if(!loss)
-                    continue;
-
-                //console.log("L-loss:"+lossKey+" -- Label:"+loss.label());
-
-                match = getMatchingPeakForMz(container, peaks, precursorMz-loss.monoLossMass/charge);
-                if(match.bestPeak) {
+                var match = getMatchingPeakForMz(container, peaks, pmz);
+                if (match.bestPeak) {
                     precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
-                    labels.push(label+" "+loss.label());
-		            antic += match.bestPeak[1];
+                    labels.push(label);
+                    antic += match.bestPeak[1];
                 }
-            }
-            for(var lossKey in peptide.customPotentialLosses) {
-                var loss = peptide.customPotentialLosses[lossKey];
-                if(!loss)
-                    continue;
 
-                //console.log("C-loss:"+lossKey+" -- Label:"+loss.label()); //+" -- Num:"+LossCombinationList(3).getLossCombinationCount());
+                var neutralLosses = getNeutralLosses(container);
+                for (var lossKey in neutralLosses) {
+                    var loss = neutralLosses[lossKey];
+                    // console.log("Neutral loss:"+lossKey+" -- Label:"+loss.label());
 
-                match = getMatchingPeakForMz(container, peaks, precursorMz-loss.monoLossMass/charge);
-                if(match.bestPeak) {
-                    precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
-                    labels.push(label+" "+loss.label());
-		            options.antic += match.bestPeak[1];
+                    match = getMatchingPeakForMz(container, peaks, pmz - (loss.monoLossMass / charge));
+                    if (match.bestPeak) {
+                        precursorMzMatches.push([match.bestPeak[0], match.bestPeak[1]]);
+                        labels.push(label + " " + loss.label());
+                        options.antic += match.bestPeak[1];
+                    }
                 }
+                if (precursorMzMatches.length > 0)
+                    container.data("precursorPeak", {data: precursorMzMatches, labels: labels, color: "#ffd700"});
             }
-
-            if (precursorMzMatches.length > 0)
-                container.data("precursorPeak", {data: precursorMzMatches, labels: labels, color: "#ffd700"});
         }
-
         container.data("anticPrecursor", antic);
     }
 
@@ -1446,7 +1453,7 @@
 	// -----------------------------------------------
 	// MATCH THEORETICAL MASSES WITH PEAKS IN THE SCAN
 	// -----------------------------------------------
-	function recalculate(container) {
+	function recalculateFragmentMatches(container) {
 	    return (container.data("massErrorChanged") ||
 	    		container.data("massTypeChanged") ||
 	    		container.data("peakAssignmentTypeChanged") ||
@@ -1464,7 +1471,7 @@
 		
 		var dataSeries = [];
 
-        if(recalculate(container))
+        if(recalculateFragmentMatches(container))
         {
             // If mass type, mass error, peak assignment or selected neutral losses have changed
             // all peak series should be recalculated.
@@ -2099,11 +2106,11 @@
 			var neutralMass = 0;
 			
 			if(options.precursorMassType == 'mono')
-               neutralMass = options.peptide.getNeutralMassMono();
+			    neutralMass = options.peptide.getNeutralMassMono();
             else
-		        neutralMass = options.peptide.getNeutralMassAvg();
+                neutralMass = options.peptide.getNeutralMassAvg();
 				
-			
+			// console.log(options.precursorMassType + " " + neutralMass);
 			var mz;
 			if(options.charge) {
 				mz = Ion.getMz(neutralMass, options.charge);
@@ -2408,11 +2415,20 @@
         }
         myTable+= ' id="'+getElementId(container, elementIds.reporterIons)+'"/><span style="font-weight:bold;">Reporter ions</span>';
 
+        // Unfragmented precursor ions
+        myTable += "<br/>";
+	    myTable+= '<input type="checkbox" value="true" ';
+        if(options.labelPrecursorPeak === true)
+	    {
+		    myTable+=checked="checked";
+	    }
+        myTable+= ' id="'+getElementId(container, elementIds.labelPrecursor)+'"/><span style="font-weight:bold;">Precursor ions</span>';
+
 		myTable += '</td> </tr> ';
 		
 		// mass type
 		myTable += '<tr><td class="optionCell"> ';
-		myTable += '<div> Mass Type:<br/> ';
+		myTable += '<div> Frag. Mass Type:<br/> ';
 		myTable += '<nobr> ';
 		myTable += '<input type="radio" name="'+getRadioName(container, "massTypeOpt")+'" value="mono"';
         if(options.fragmentMassType == 'mono')
