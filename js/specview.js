@@ -2424,7 +2424,7 @@
 	    myTable+= '<input type="checkbox" value="true" ';
         if(options.labelPrecursorPeak === true)
 	    {
-		    myTable+=checked="checked";
+		    myTable+=' checked="checked"';
 	    }
         myTable+= ' id="'+getElementId(container, elementIds.labelPrecursor)+'"/><span style="font-weight:bold;">Precursor ions</span>';
 
