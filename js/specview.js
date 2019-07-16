@@ -1830,7 +1830,11 @@
             }
 
             var mean = totalIntensity / peakCount;
-            if(peakCount <= 10 && intensity == maxIntensity)
+            if(peakCount <= 2 && intensity >= maxIntensity * 0.8)
+            {
+                sparsePeaks.push(peak);
+            }
+            else if(peakCount <= 10 && intensity == maxIntensity)
             {
                 sparsePeaks.push(peak);
             }
