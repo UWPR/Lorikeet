@@ -54,6 +54,7 @@
             tooltipZIndex: null,
             showMassErrorPlot: false,
             massErrorPlotDefaultUnit: null,
+            userReporterIons: null,
             // Use these option to set the x-axis range (m/z) that will be displayed when the MS/MS plot is initialized or is fully zoomed out.
             // Default range is the min and max peak m/z.
             minDisplayMz: null,
@@ -114,7 +115,8 @@
         labelPrecursor: "labelPrecursor",
         immoniumIons: "immoniumIons",
         reporterIons: "reporterIons",
-        anticInfo: "anticInfo"
+        anticInfo: "anticInfo",
+        userReporterIons: "userReporterIons"
     };
 
     function getElementId(container, elementId){
@@ -199,6 +201,7 @@
             showSequenceInfo(container, options);
             showFileInfo(container, options);
             showModInfo(container, options);
+            showUserReporterIonsInfo(container, options);
         }
 
         // calculate precursor ions
@@ -210,6 +213,10 @@
         // Calculate reporter ion labels, if required
         calculateReporterIons(container);
 
+        // calculate user-supplied reporter ions
+        if(options.userReporterIons) {
+            calculateUserReporters(options, container);
+        }
 
         createPlot(container, getDatasets(container)); // Initial MS/MS Plot
 
@@ -1105,6 +1112,11 @@
             }
         }
 
+        // add user reporter ions
+        if( container.data("userReporterSeries") ) {
+            data.push(container.data("userReporterSeries"));
+        }
+
         // add any user specified extra peaks
         for(var i = 0; i < options.extraPeakSeries.length; i += 1) {
             data.push(options.extraPeakSeries[i]);
@@ -1229,6 +1241,38 @@
         }
 
         container.data("reporterSeries", reporterSeries);
+    }
+
+    /**
+     * Calculate user-supplied reporter ion matches.
+     *
+     * @param container
+     */
+    function calculateUserReporters(options, container) {
+
+        const ionMzArray = options.userReporterIons;
+        let antic = 0;
+
+        const peaks = options.peaks;
+        let matches = [];
+        let labels = [];
+
+        for(let i = 0; i < ionMzArray.length; i++)
+        {
+            const match = getMatchingPeakForMz(container, peaks, ionMzArray[i]);
+            if(match.bestPeak)
+            {
+                matches.push([match.bestPeak[0], match.bestPeak[1]]);
+                labels.push(match.bestPeak[0].toFixed(2));
+                antic += match.bestPeak[1];
+            }
+        }
+
+        if(matches.length > 0)
+        {
+            container.data("userReporterSeries",  {data: matches, labels: labels, color:"#2f4f4f"} ) // DarkSlateBlue
+            container.data("anticUserReporterIons", antic);
+        }
     }
 
     function calculateReporters(seriesInfo, container)
@@ -1912,6 +1956,8 @@
             parentTable += '<div id="'+getElementId(container, elementIds.anticInfo)+'" style="margin-top:5px;"></div> ';
             // placeholder for modifications
             parentTable += '<div id="'+getElementId(container, elementIds.modInfo)+'" style="margin-top:20px;"></div> ';
+            // placeholder for user-supplied reporter ion masses
+            parentTable += '<div id="'+getElementId(container, elementIds.userReporterIons)+'" style="margin-top:20px;"></div> ';
             parentTable += '</div> ';
             parentTable += '</td> ';
             parentTable += '</tr> ';
@@ -2180,6 +2226,28 @@
     }
 
     //---------------------------------------------------------
+    // USER-SPECIFIED REPORTER ION INFO
+    //---------------------------------------------------------
+    function showUserReporterIonsInfo (container) {
+
+        var options = container.data("options");
+        var reporterIonInfo = '';
+
+        if(!options.userReporterIons) {
+            return;
+        }
+
+        reporterIonInfo += '<div>';
+        reporterIonInfo += 'Reporter Ions:';
+        for( let i = 0; i < options.userReporterIons.length; i++ ) {
+            reporterIonInfo += "<div><b>"+ options.userReporterIons[i]+"</b></div>";
+        }
+        reporterIonInfo += '</div>';
+
+        $(getElementSelector(container, elementIds.userReporterIons)).append(reporterIonInfo);
+    }
+
+    //---------------------------------------------------------
     // MODIFICATION INFO
     //---------------------------------------------------------
     function showModInfo (container) {
@@ -2286,6 +2354,11 @@
         {
             var sion = selectedIons[i];
             antic += ionSeriesAntic[sion.type][sion.charge];
+        }
+
+        // user reporter ions
+        if(container.data("anticUserReporterIons")) {
+            antic += container.data("anticUserReporterIons");
         }
 
         var anticInfo = '<div id="'+getElementId(container, elementIds.anticInfo)+'" style="margin-top:5px;">';
