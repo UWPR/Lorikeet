@@ -19,8 +19,8 @@ Files required for the plugin to work:
 
 
 Other Dependencies:
-1. JQuery core library (tested with version 1.4.2)
-2. JQuery UI library (tested with version 1.8.4)
+1. JQuery core library (tested with version 3.5.1)
+2. JQuery UI library (tested with version 1.13.0. Lorikeet uses only the slider widget)
 
 A NOTE ABOUT Internet Explorer
 ---------------------------------------
@@ -44,6 +44,7 @@ Please see the following examples of using the Lorikeet plugin in a html page:
 Stylesheet:
 ---------------------------------------
 The stylesheet lorikeet.css contains the necessary styling for the Lorikeet plugin.
+jquery-ui-1.13.0.slider.min.css contains the JQuery UI Slider specific CSS
 
 
 Usage:
